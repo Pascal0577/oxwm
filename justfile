@@ -23,8 +23,8 @@ test-clean:
 
 test:
 	pkill Xephyr || true
-	Xephyr -screen 1280x800 :1 & sleep 1
-	DISPLAY=:1 cargo run --release -- --config resources/test-config.lua
+	Xephyr -screen 1280x800 :2 & sleep 1
+	DISPLAY=:2 cargo run --release -- --config resources/test-config.lua
 
 test-multimon:
 	pkill Xephyr || true

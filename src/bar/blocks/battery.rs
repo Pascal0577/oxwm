@@ -19,6 +19,7 @@ impl Battery {
         format_full: &str,
         interval_secs: u64,
         color: u32,
+        battery_name: Option<String>,
     ) -> Self {
         Self {
             format_charging: format_charging.to_string(),
@@ -26,7 +27,10 @@ impl Battery {
             format_full: format_full.to_string(),
             interval: Duration::from_secs(interval_secs),
             color,
-            battery_path: "/sys/class/power_supply/BAT0".to_string(),
+            battery_path: format!(
+                "/sys/class/power_supply/{}",
+                battery_name.unwrap_or_else(|| "BAT0".to_string())
+            ),
         }
     }
 

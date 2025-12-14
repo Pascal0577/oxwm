@@ -154,6 +154,7 @@ oxwm.bar.set_blocks({
         interval = 30,
         color = colors.green,
         underline = true,
+        battery_name = "BAT1"
     }),
     -- oxwm.bar.block.battery({
     --     charging = "󰂄 Bat: {}%",

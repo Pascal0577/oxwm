@@ -1455,8 +1455,7 @@ impl WindowManager {
             for window in &windows {
                 self.connection.configure_window(
                     *window,
-                    &x11rb::protocol::xproto::ConfigureWindowAux::new()
-                        .border_width(0),
+                    &x11rb::protocol::xproto::ConfigureWindowAux::new().border_width(0),
                 )?;
             }
 

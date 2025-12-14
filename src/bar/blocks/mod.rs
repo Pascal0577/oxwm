@@ -34,6 +34,7 @@ pub enum BlockCommand {
         format_charging: String,
         format_discharging: String,
         format_full: String,
+        battery_name: Option<String>,
     },
     Ram,
     Static(String),
@@ -58,12 +59,14 @@ impl BlockConfig {
                 format_charging,
                 format_discharging,
                 format_full,
+                battery_name,
             } => Box::new(Battery::new(
                 format_charging,
                 format_discharging,
                 format_full,
                 self.interval_secs,
                 self.color,
+                battery_name.clone(),
             )),
             BlockCommand::Ram => Box::new(Ram::new(&self.format, self.interval_secs, self.color)),
             BlockCommand::Static(text) => Box::new(StaticBlock::new(

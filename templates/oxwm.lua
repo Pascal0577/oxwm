@@ -267,7 +267,7 @@ function oxwm.bar.block.shell(config) end
 function oxwm.bar.block.static(config) end
 
 ---Create a battery status block
----@param config {format: string, charging: string, discharging: string, full: string, interval: integer, color: string|integer, underline: boolean} Block configuration
+---@param config {format: string, charging: string, discharging: string, full: string, interval: integer, color: string|integer, underline: boolean, battery_name: string} Block configuration
 ---@return table Block configuration
 function oxwm.bar.block.battery(config) end
 
