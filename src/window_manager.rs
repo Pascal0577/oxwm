@@ -9,7 +9,6 @@ use crate::layout::{Layout, LayoutBox, LayoutType, layout_from_str, next_layout}
 use crate::monitor::{Monitor, detect_monitors};
 use crate::overlay::{ErrorOverlay, KeybindOverlay, Overlay};
 use std::collections::{HashMap, HashSet};
-use std::path::PathBuf;
 use x11rb::cursor::Handle as CursorHandle;
 
 use x11rb::connection::Connection;

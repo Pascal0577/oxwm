@@ -21,23 +21,18 @@
 
     devShells = forAllSystems (pkgs: {
       default = pkgs.mkShell {
-        buildInputs = [
+        inputsFrom = [self.packages.${pkgs.stdenv.hostPlatform.system}.oxwm];
+        packages = [
           pkgs.rustc
           pkgs.cargo
           pkgs.alacritty
           pkgs.just
           pkgs.xorg.xorgserver
-          pkgs.xorg.libX11
-          pkgs.xorg.libXft
-          pkgs.xorg.libXrender
-          pkgs.freetype
-          pkgs.fontconfig
-          pkgs.pkg-config
         ];
         shellHook = ''
           export PS1="(oxwm-dev) $PS1"
         '';
-        RUST_SRC_PATH = "${pkgs.rustPlatform.rustLibSrc}";
+        env.RUST_SRC_PATH = "${pkgs.rustPlatform.rustLibSrc}";
       };
     });
 
