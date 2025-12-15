@@ -9,13 +9,13 @@ pub fn parse_lua_config(
 ) -> Result<crate::Config, ConfigError> {
     let lua = Lua::new();
 
-    if let Some(dir) = config_dir {
-        if let Some(dir_str) = dir.to_str() {
-            let setup_code = format!("package.path = '{}/?.lua;' .. package.path", dir_str);
-            lua.load(&setup_code)
-                .exec()
-                .map_err(|e| ConfigError::LuaError(format!("Failed to set package.path: {}", e)))?;
-        }
+    if let Some(dir) = config_dir
+        && let Some(dir_str) = dir.to_str()
+    {
+        let setup_code = format!("package.path = '{}/?.lua;' .. package.path", dir_str);
+        lua.load(&setup_code)
+            .exec()
+            .map_err(|e| ConfigError::LuaError(format!("Failed to set package.path: {}", e)))?;
     }
 
     let builder = lua_api::register_api(&lua)?;
@@ -26,7 +26,7 @@ pub fn parse_lua_config(
 
     let builder_data = builder.borrow().clone();
 
-    return Ok(crate::Config {
+    Ok(crate::Config {
         border_width: builder_data.border_width,
         border_focused: builder_data.border_focused,
         border_unfocused: builder_data.border_unfocused,
@@ -51,5 +51,5 @@ pub fn parse_lua_config(
         autostart: builder_data.autostart,
         auto_tile: builder_data.auto_tile,
         path: None,
-    });
+    })
 }
