@@ -1,3 +1,4 @@
+use std::path::Path;
 use std::path::PathBuf;
 
 static CONFIG_FILE: &str = "config.lua";
@@ -16,17 +17,8 @@ fn main() {
         Args::Error(e) => panic!("Could not get valid arguments:\n{}", e),
     };
 
-    let config_path = match arguments.get(2) {
-        Some(p) => PathBuf::from(p),
-        None => {
-            let config_directory = get_config_path();
-            let config_path = config_directory.join(CONFIG_FILE);
-            PathBuf::from(config_path)
-        }
-    };
-
-    let (config, had_broken_config) = match load_config(config_path) {
-        Ok((c, b)) => (c, b),
+    let (config, had_broken_config) = match load_config(arguments.get(2)) {
+        Ok((c, hbc)) => (c, hbc),
         Err(e) => panic!("Could not load config:\n{}", e),
     };
 
@@ -55,13 +47,23 @@ fn main() {
     }
 }
 
-fn load_config(config_path: PathBuf) -> Result<(oxwm::Config, bool), Box<dyn std::error::Error>> {
-    check_convert(&config_path)
-        .map_err(|error| format!("Failed to check old config:\n{}", error))?;
-    let config_string = std::fs::read_to_string(&config_path)
+fn load_config(
+    config_path: Option<&String>,
+) -> Result<(oxwm::Config, bool), Box<dyn std::error::Error>> {
+    let path = match config_path {
+        None => {
+            let config_path = get_config_path().join(CONFIG_FILE);
+            check_convert(&config_path)
+                .map_err(|error| format!("Failed to check old config:\n{}", error))?;
+            config_path
+        }
+        Some(p) => PathBuf::from(p),
+    };
+
+    let config_string = std::fs::read_to_string(&path)
         .map_err(|error| format!("Failed to read config file:\n{}", error))?;
 
-    let config_directory = config_path.parent();
+    let config_directory = path.parent();
 
     match oxwm::config::parse_lua_config(&config_string, config_directory) {
         Ok(config) => Ok((config, false)),
@@ -77,8 +79,8 @@ fn init_config() -> Result<(), Box<dyn std::error::Error>> {
     let config_directory = get_config_path();
     std::fs::create_dir_all(&config_directory)?;
 
-    let config_template = include_str!("../../templates/config.lua");
-    let config_path = config_directory.join("config.lua");
+    let config_template = TEMPLATE;
+    let config_path = config_directory.join(CONFIG_FILE);
     std::fs::write(&config_path, config_template)?;
 
     println!("✓ Config created at {:?}", config_path);
@@ -114,12 +116,13 @@ fn print_help() {
 }
 
 fn process_args() -> Args {
-    let name = match std::env::args().nth(0) {
+    let mut args = std::env::args();
+    let name = match args.next() {
         Some(n) => n,
         None => return Args::Error("Program name can't be extracted from args".to_string()),
     };
-    let switch = std::env::args().nth(1);
-    let path = std::env::args().nth(2);
+    let switch = args.next();
+    let path = args.next();
 
     let switch = match switch {
         Some(s) => s,
@@ -135,14 +138,14 @@ fn process_args() -> Args {
             print_help();
             Args::Exit
         }
-        "--init" => {
-            init_config().expect("Failed to create default config");
-            Args::Exit
-        }
+        "--init" => match init_config() {
+            Ok(_) => Args::Exit,
+            Err(e) => Args::Error(format!("Failed to create default config:\n{e}")),
+        },
         "--config" => {
             if let Some(path) = path
                 && std::fs::exists(&path).is_ok()
-                && std::fs::exists(&path).unwrap() == true
+                && std::fs::exists(&path).unwrap()
             {
                 Args::Arguments(vec![name, switch, path])
             } else {
@@ -153,7 +156,7 @@ fn process_args() -> Args {
     }
 }
 
-fn check_convert(path: &PathBuf) -> Result<(), &str> {
+fn check_convert(path: &Path) -> Result<(), &str> {
     let config_directory = get_config_path();
 
     if !path.exists() {
