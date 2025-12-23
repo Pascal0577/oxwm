@@ -1,3 +1,4 @@
+use oxwm::errors::ConfigError;
 use oxwm::errors::MainError;
 use std::path::Path;
 use std::path::PathBuf;
@@ -18,14 +19,15 @@ fn main() -> Result<(), MainError> {
         Args::Error(e) => return Err(e),
     };
 
-    let (config, had_broken_config) = load_config(arguments.get(2))?;
+    let (config, config_warning) = load_config(arguments.get(2))?;
 
     let mut window_manager = match oxwm::window_manager::WindowManager::new(config) {
         Ok(wm) => wm,
         Err(e) => return Err(MainError::CouldNotStartWm(e)),
     };
 
-    if had_broken_config {
+    if let Some(warning) = config_warning {
+        eprintln!("{warning}");
         window_manager.show_migration_overlay();
     }
 
@@ -46,7 +48,9 @@ fn main() -> Result<(), MainError> {
     Ok(())
 }
 
-fn load_config(config_path: Option<&String>) -> Result<(oxwm::Config, bool), MainError> {
+fn load_config(
+    config_path: Option<&String>,
+) -> Result<(oxwm::Config, Option<ConfigError>), MainError> {
     let path = match config_path {
         None => {
             let config_dir = get_config_path()?;
@@ -64,19 +68,19 @@ fn load_config(config_path: Option<&String>) -> Result<(oxwm::Config, bool), Mai
 
     let config_directory = path.parent();
 
-    let (mut config, had_broken_config) =
+    let (mut config, config_warning) =
         match oxwm::config::parse_lua_config(&config_string, config_directory) {
-            Ok(config) => (config, false),
-            Err(_error) => {
+            Ok(config) => (config, None),
+            Err(warning) => {
                 let config = match oxwm::config::parse_lua_config(TEMPLATE, None) {
                     Ok(c) => c,
                     Err(e) => return Err(MainError::FailedReadConfigTemplate(e)),
                 };
-                (config, true)
+                (config, Some(warning))
             }
         };
     config.path = Some(path);
-    Ok((config, had_broken_config))
+    Ok((config, config_warning))
 }
 
 fn init_config() -> Result<(), MainError> {
