@@ -30,20 +30,10 @@ fn main() -> Result<(), MainError> {
         window_manager.show_startup_config_error(warning);
     }
 
-    let should_restart = match window_manager.run() {
-        Ok(sr) => sr,
-        Err(e) => return Err(MainError::BadRestartStatus(e)),
-    };
-
-    drop(window_manager);
-
-    if should_restart {
-        use std::os::unix::process::CommandExt;
-        let error = std::process::Command::new(&arguments[0])
-            .args(&arguments[1..])
-            .exec();
-        eprintln!("Error: Failed to restart: {}", error);
+    if let Err(e) = window_manager.run() {
+        return Err(MainError::WmError(e));
     }
+
     Ok(())
 }
 

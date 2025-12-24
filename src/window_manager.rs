@@ -16,6 +16,11 @@ use x11rb::protocol::Event;
 use x11rb::protocol::xproto::*;
 use x11rb::rust_connection::RustConnection;
 
+enum Control {
+    Continue,
+    Quit,
+}
+
 pub fn tag_mask(tag: usize) -> TagMask {
     1 << tag
 }
@@ -491,7 +496,7 @@ impl WindowManager {
         Ok(())
     }
 
-    pub fn run(&mut self) -> WmResult<bool> {
+    pub fn run(&mut self) -> WmResult<()> {
         println!("oxwm started on display {}", self.screen_number);
 
         self.grab_keys()?;
@@ -503,8 +508,8 @@ impl WindowManager {
         loop {
             match self.connection.poll_for_event_with_sequence()? {
                 Some((event, _sequence)) => {
-                    if let Some(should_restart) = self.handle_event(event)? {
-                        return Ok(should_restart);
+                    if matches!(self.handle_event(event)?, Control::Quit) {
+                        return Ok(());
                     }
                 }
                 None => {
@@ -2678,7 +2683,7 @@ impl WindowManager {
         Ok(())
     }
 
-    fn handle_event(&mut self, event: Event) -> WmResult<Option<bool>> {
+    fn handle_event(&mut self, event: Event) -> WmResult<Control> {
         match event {
             Event::KeyPress(ref key_event) if key_event.event == self.overlay.window() => {
                 if self.overlay.is_visible()
@@ -2686,7 +2691,7 @@ impl WindowManager {
                 {
                     eprintln!("Failed to hide overlay: {:?}", error);
                 }
-                return Ok(None);
+                return Ok(Control::Continue);
             }
             Event::ButtonPress(ref button_event) if button_event.event == self.overlay.window() => {
                 if self.overlay.is_visible()
@@ -2694,7 +2699,7 @@ impl WindowManager {
                 {
                     eprintln!("Failed to hide overlay: {:?}", error);
                 }
-                return Ok(None);
+                return Ok(Control::Continue);
             }
             Event::Expose(ref expose_event) if expose_event.window == self.overlay.window() => {
                 if self.overlay.is_visible()
@@ -2702,7 +2707,7 @@ impl WindowManager {
                 {
                     eprintln!("Failed to draw overlay: {:?}", error);
                 }
-                return Ok(None);
+                return Ok(Control::Continue);
             }
             Event::KeyPress(ref e) if e.event == self.keybind_overlay.window() => {
                 if self.keybind_overlay.is_visible()
@@ -2720,12 +2725,12 @@ impl WindowManager {
                         }
                     }
                 }
-                return Ok(None);
+                return Ok(Control::Continue);
             }
             Event::ButtonPress(ref e) if e.event == self.keybind_overlay.window() => {
                 self.connection
                     .allow_events(Allow::REPLAY_POINTER, e.time)?;
-                return Ok(None);
+                return Ok(Control::Continue);
             }
             Event::Expose(ref expose_event)
                 if expose_event.window == self.keybind_overlay.window() =>
@@ -2735,16 +2740,16 @@ impl WindowManager {
                 {
                     eprintln!("Failed to draw keybind overlay: {:?}", error);
                 }
-                return Ok(None);
+                return Ok(Control::Continue);
             }
             Event::MapRequest(event) => {
                 let attrs = match self.connection.get_window_attributes(event.window)?.reply() {
                     Ok(attrs) => attrs,
-                    Err(_) => return Ok(None),
+                    Err(_) => return Ok(Control::Continue),
                 };
 
                 if attrs.override_redirect {
-                    return Ok(None);
+                    return Ok(Control::Continue);
                 }
 
                 if !self.windows.contains(&event.window) {
@@ -2763,11 +2768,11 @@ impl WindowManager {
             }
             Event::PropertyNotify(event) => {
                 if event.state == Property::DELETE {
-                    return Ok(None);
+                    return Ok(Control::Continue);
                 }
 
                 if !self.clients.contains_key(&event.window) {
-                    return Ok(None);
+                    return Ok(Control::Continue);
                 }
 
                 if event.atom == AtomEnum::WM_TRANSIENT_FOR.into() {
@@ -2808,7 +2813,7 @@ impl WindowManager {
             }
             Event::EnterNotify(event) => {
                 if event.mode != x11rb::protocol::xproto::NotifyMode::NORMAL {
-                    return Ok(None);
+                    return Ok(Control::Continue);
                 }
                 if self.windows.contains(&event.event) {
                     if let Some(client) = self.clients.get(&event.event)
@@ -2823,7 +2828,7 @@ impl WindowManager {
             }
             Event::MotionNotify(event) => {
                 if event.event != self.root {
-                    return Ok(None);
+                    return Ok(Control::Continue);
                 }
 
                 if let Some(monitor_index) =
@@ -2842,7 +2847,7 @@ impl WindowManager {
             }
             Event::KeyPress(event) => {
                 let Some(mapping) = &self.keyboard_mapping else {
-                    return Ok(None);
+                    return Ok(Control::Continue);
                 };
 
                 let result = keyboard::handle_key_press(
@@ -2860,7 +2865,7 @@ impl WindowManager {
                         self.update_bar()?;
 
                         match action {
-                            KeyAction::Quit => return Ok(Some(false)),
+                            KeyAction::Quit => return Ok(Control::Quit),
                             KeyAction::Restart => match self.try_reload_config() {
                                 Ok(()) => {
                                     self.gaps_enabled = self.config.gaps_enabled;
@@ -3162,7 +3167,7 @@ impl WindowManager {
             }
             Event::ClientMessage(event) => {
                 if !self.clients.contains_key(&event.window) {
-                    return Ok(None);
+                    return Ok(Control::Continue);
                 }
 
                 if event.type_ == self.atoms.net_wm_state {
@@ -3174,7 +3179,7 @@ impl WindowManager {
                             1 => true,
                             0 => false,
                             2 => !self.fullscreen_windows.contains(&event.window),
-                            _ => return Ok(None),
+                            _ => return Ok(Control::Continue),
                         };
                         self.set_window_fullscreen(event.window, fullscreen)?;
                     }
@@ -3225,7 +3230,7 @@ impl WindowManager {
             }
             _ => {}
         }
-        Ok(None)
+        Ok(Control::Continue)
     }
 
     fn apply_layout(&mut self) -> WmResult<()> {

@@ -28,7 +28,6 @@ local colors = {
     blue = 0x6dade3,
 }
 
-asdf
 
 local modkey = "Mod1"
 

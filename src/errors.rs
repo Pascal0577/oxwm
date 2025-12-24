@@ -47,7 +47,7 @@ pub enum MainError {
     FailedReadConfig(std::io::Error),
     FailedReadConfigTemplate(ConfigError),
     CouldNotStartWm(WmError),
-    BadRestartStatus(WmError),
+    WmError(WmError),
     BadConfigPath,
     NoConfigPath,
     InvalidArguments,
@@ -201,7 +201,7 @@ impl std::fmt::Debug for MainError {
                 write!(f, "{e}")
             }
             FailedReadConfigTemplate(e) => write!(f, "{e}"),
-            CouldNotStartWm(e) | BadRestartStatus(e) => write!(f, "{e}"),
+            CouldNotStartWm(e) | WmError(e) => write!(f, "{e}"),
             BadConfigPath => write!(f, "Given config path does not exist"),
             NoConfigPath => write!(f, "The --config switch requires a path value"),
             InvalidArguments => write!(f, "The arguments given are invalid try --help"),
