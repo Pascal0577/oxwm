@@ -3110,12 +3110,15 @@ impl WindowManager {
                 if let Some(client) = self.clients.get(&event.window) {
                     let monitor = &self.monitors[client.monitor_index];
                     let is_floating = client.is_floating;
+                    let is_fullscreen = client.is_fullscreen;
                     let has_layout = self.layout.name() != "normie";
 
                     if event.value_mask.contains(ConfigWindow::BORDER_WIDTH) {
                         if let Some(c) = self.clients.get_mut(&event.window) {
                             c.border_width = event.border_width;
                         }
+                    } else if is_fullscreen {
+                        self.send_configure_notify(event.window)?;
                     } else if is_floating || !has_layout {
                         let mut x = client.x_position as i32;
                         let mut y = client.y_position as i32;
