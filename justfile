@@ -3,13 +3,13 @@ build:
 
 install: build
     cp target/release/oxwm /usr/bin/oxwm
-	cp resources/oxwm.desktop /usr/share/xsessions/oxwm.desktop
+    cp resources/oxwm.desktop /usr/share/xsessions/oxwm.desktop
     chmod +x /usr/bin/oxwm
     @echo "✓ oxwm installed to /usr/bin/oxwm"
     @echo "  Run 'oxwm --init' to create your config"
 
 checkinstall:
-	checkinstall --pkgname oxwm --exclude /root -y just install
+    checkinstall --pkgname oxwm --exclude /root -y just install
 
 uninstall:
     rm -f /usr/bin/oxwm
