@@ -243,7 +243,10 @@ impl WindowManager {
             )?;
         }
 
-        let monitors = detect_monitors(&connection, &screen, root)?;
+        let mut monitors = detect_monitors(&connection, &screen, root)?;
+        for monitor in monitors.iter_mut() {
+            monitor.init_pertag(config.tags.len(), "tiling");
+        }
 
         let display = unsafe { x11::xlib::XOpenDisplay(std::ptr::null()) };
         if display.is_null() {
@@ -710,6 +713,9 @@ impl WindowManager {
         if let Some(monitor) = self.monitors.get_mut(self.selected_monitor) {
             let new_mfact = (monitor.master_factor + delta).clamp(0.05, 0.95);
             monitor.master_factor = new_mfact;
+            if let Some(ref mut pertag) = monitor.pertag {
+                pertag.master_factors[pertag.current_tag] = new_mfact;
+            }
             self.apply_layout()?;
         }
         Ok(())
@@ -719,8 +725,24 @@ impl WindowManager {
         if let Some(monitor) = self.monitors.get_mut(self.selected_monitor) {
             let new_nmaster = (monitor.num_master + delta).max(0);
             monitor.num_master = new_nmaster;
+            if let Some(ref mut pertag) = monitor.pertag {
+                pertag.num_masters[pertag.current_tag] = new_nmaster;
+            }
             self.apply_layout()?;
         }
+        Ok(())
+    }
+
+    fn toggle_bar(&mut self) -> WmResult<()> {
+        if let Some(monitor) = self.monitors.get_mut(self.selected_monitor) {
+            monitor.show_bar = !monitor.show_bar;
+            self.show_bar = monitor.show_bar;
+            if let Some(ref mut pertag) = monitor.pertag {
+                pertag.show_bars[pertag.current_tag] = monitor.show_bar;
+            }
+        }
+        self.apply_layout()?;
+        self.update_bar()?;
         Ok(())
     }
 
@@ -871,6 +893,11 @@ impl WindowManager {
                     match layout_from_str(layout_name) {
                         Ok(layout) => {
                             self.layout = layout;
+                            if let Some(monitor) = self.monitors.get_mut(self.selected_monitor) {
+                                if let Some(ref mut pertag) = monitor.pertag {
+                                    pertag.layouts[pertag.current_tag] = layout_name.to_string();
+                                }
+                            }
                             if layout_name != "normie" && layout_name != "floating" {
                                 self.floating_windows.clear();
                             }
@@ -888,6 +915,11 @@ impl WindowManager {
                 match layout_from_str(next_name) {
                     Ok(layout) => {
                         self.layout = layout;
+                        if let Some(monitor) = self.monitors.get_mut(self.selected_monitor) {
+                            if let Some(ref mut pertag) = monitor.pertag {
+                                pertag.layouts[pertag.current_tag] = next_name.to_string();
+                            }
+                        }
                         if next_name != "normie" && next_name != "floating" {
                             self.floating_windows.clear();
                         }
@@ -1243,21 +1275,48 @@ impl WindowManager {
             return Ok(());
         }
 
-        let monitor = match self.monitors.get_mut(self.selected_monitor) {
-            Some(m) => m,
-            None => return Ok(()),
-        };
-
         let new_tagset = tag_mask(tag_index);
+        let mut layout_name: Option<String> = None;
+        let mut toggle_bar = false;
 
-        if new_tagset == monitor.tagset[monitor.selected_tags_index] {
-            if !self.config.tag_back_and_forth {
-                return Ok(());
+        if let Some(monitor) = self.monitors.get_mut(self.selected_monitor) {
+            if new_tagset == monitor.tagset[monitor.selected_tags_index] {
+                if !self.config.tag_back_and_forth {
+                    return Ok(());
+                }
+                monitor.tagset.swap(0, 1);
+                if let Some(ref mut pertag) = monitor.pertag {
+                    let tmp = pertag.previous_tag;
+                    pertag.previous_tag = pertag.current_tag;
+                    pertag.current_tag = tmp;
+                }
+            } else {
+                monitor.selected_tags_index ^= 1;
+                monitor.tagset[monitor.selected_tags_index] = new_tagset;
+                if let Some(ref mut pertag) = monitor.pertag {
+                    pertag.previous_tag = pertag.current_tag;
+                    pertag.current_tag = tag_index + 1;
+                }
             }
-            monitor.tagset.swap(0, 1);
-        } else {
-            monitor.selected_tags_index ^= 1;
-            monitor.tagset[monitor.selected_tags_index] = new_tagset;
+
+            if let Some(ref pertag) = monitor.pertag {
+                monitor.num_master = pertag.num_masters[pertag.current_tag];
+                monitor.master_factor = pertag.master_factors[pertag.current_tag];
+                layout_name = Some(pertag.layouts[pertag.current_tag].clone());
+                if monitor.show_bar != pertag.show_bars[pertag.current_tag] {
+                    toggle_bar = true;
+                }
+            }
+        }
+
+        if let Some(name) = layout_name {
+            if let Ok(layout) = layout_from_str(&name) {
+                self.layout = layout;
+            }
+        }
+
+        if toggle_bar {
+            self.toggle_bar()?;
         }
 
         self.save_selected_tags()?;
@@ -1273,19 +1332,50 @@ impl WindowManager {
             return Ok(());
         }
 
-        let monitor = match self.monitors.get_mut(self.selected_monitor) {
-            Some(m) => m,
-            None => return Ok(()),
-        };
+        let num_tags = self.config.tags.len();
+        let all_tags_mask = (1u32 << num_tags) - 1;
+        let mut layout_name: Option<String> = None;
+        let mut toggle_bar = false;
 
-        let mask = tag_mask(tag_index);
-        let new_tagset = monitor.tagset[monitor.selected_tags_index] ^ mask;
+        if let Some(monitor) = self.monitors.get_mut(self.selected_monitor) {
+            let mask = tag_mask(tag_index);
+            let new_tagset = monitor.tagset[monitor.selected_tags_index] ^ mask;
 
-        if new_tagset == 0 {
-            return Ok(());
+            if new_tagset == 0 {
+                return Ok(());
+            }
+
+            monitor.tagset[monitor.selected_tags_index] = new_tagset;
+
+            if let Some(ref mut pertag) = monitor.pertag {
+                if new_tagset == all_tags_mask {
+                    pertag.previous_tag = pertag.current_tag;
+                    pertag.current_tag = 0;
+                }
+
+                if pertag.current_tag > 0 && (new_tagset & (1 << (pertag.current_tag - 1))) == 0 {
+                    pertag.previous_tag = pertag.current_tag;
+                    pertag.current_tag = (new_tagset.trailing_zeros() as usize) + 1;
+                }
+
+                monitor.num_master = pertag.num_masters[pertag.current_tag];
+                monitor.master_factor = pertag.master_factors[pertag.current_tag];
+                layout_name = Some(pertag.layouts[pertag.current_tag].clone());
+                if monitor.show_bar != pertag.show_bars[pertag.current_tag] {
+                    toggle_bar = true;
+                }
+            }
         }
 
-        monitor.tagset[monitor.selected_tags_index] = new_tagset;
+        if let Some(name) = layout_name {
+            if let Ok(layout) = layout_from_str(&name) {
+                self.layout = layout;
+            }
+        }
+
+        if toggle_bar {
+            self.toggle_bar()?;
+        }
 
         self.save_selected_tags()?;
         self.focus(None)?;
