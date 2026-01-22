@@ -1,7 +1,7 @@
 ---@meta
 ---@module 'oxwm'
 
-local modkey = "Mod4"
+local modkey = "Mod1"
 local terminal = "alacritty"
 
 local colors = {
