@@ -2,7 +2,7 @@
 ---@module 'oxwm'
 
 local modkey = "Mod4"
-local terminal = "st"
+local terminal = "alacritty"
 
 local colors = {
     fg = "#bbbbbb",
