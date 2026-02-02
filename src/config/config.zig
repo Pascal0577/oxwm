@@ -7,6 +7,7 @@ pub const Action = enum {
     quit,
     reload_config,
     restart,
+    show_keybinds,
     focus_next,
     focus_prev,
     move_next,
@@ -127,6 +128,7 @@ pub const Config = struct {
     layout_tile_symbol: []const u8 = "[]=",
     layout_monocle_symbol: []const u8 = "[M]",
     layout_floating_symbol: []const u8 = "><>",
+    layout_scrolling_symbol: []const u8 = "[S]",
 
     scheme_normal: Color_Scheme = .{ .fg = 0xbbbbbb, .bg = 0x1a1b26, .border = 0x444444 },
     scheme_selected: Color_Scheme = .{ .fg = 0x0db9d7, .bg = 0x1a1b26, .border = 0xad8ee6 },

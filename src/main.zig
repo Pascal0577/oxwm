@@ -735,6 +735,7 @@ fn execute_action(display: *Display, action: config_mod.Action, int_arg: i32, st
         },
         .reload_config => reload_config(display),
         .restart => {},
+        .show_keybinds => {},
         .focus_next => focusstack(display, 1),
         .focus_prev => focusstack(display, -1),
         .move_next => movestack(display, 1),

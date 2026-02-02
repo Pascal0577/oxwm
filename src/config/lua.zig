@@ -300,6 +300,9 @@ fn register_misc_functions(state: *c.lua_State) void {
     c.lua_pushcfunction(state, lua_set_tags);
     c.lua_setfield(state, -2, "set_tags");
 
+    c.lua_pushcfunction(state, lua_set_layout_symbol);
+    c.lua_setfield(state, -2, "set_layout_symbol");
+
     c.lua_pushcfunction(state, lua_autostart);
     c.lua_setfield(state, -2, "autostart");
 
@@ -314,6 +317,9 @@ fn register_misc_functions(state: *c.lua_State) void {
 
     c.lua_pushcfunction(state, lua_toggle_gaps);
     c.lua_setfield(state, -2, "toggle_gaps");
+
+    c.lua_pushcfunction(state, lua_show_keybinds);
+    c.lua_setfield(state, -2, "show_keybinds");
 
     c.lua_pushcfunction(state, lua_set_master_factor);
     c.lua_setfield(state, -2, "set_master_factor");
@@ -952,6 +958,32 @@ fn lua_auto_tile(state: ?*c.lua_State) callconv(.c) c_int {
     return 0;
 }
 
+fn lua_set_layout_symbol(state: ?*c.lua_State) callconv(.c) c_int {
+    const cfg = config orelse return 0;
+    const s = state orelse return 0;
+    const name = get_string_arg(s, 1) orelse return 0;
+    const symbol = get_string_arg(s, 2) orelse return 0;
+
+    const layout_map = .{
+        .{ "tiling", &cfg.layout_tile_symbol },
+        .{ "tile", &cfg.layout_tile_symbol },
+        .{ "normie", &cfg.layout_floating_symbol },
+        .{ "floating", &cfg.layout_floating_symbol },
+        .{ "float", &cfg.layout_floating_symbol },
+        .{ "monocle", &cfg.layout_monocle_symbol },
+        .{ "scrolling", &cfg.layout_scrolling_symbol },
+        .{ "scroll", &cfg.layout_scrolling_symbol },
+    };
+
+    inline for (layout_map) |entry| {
+        if (std.mem.eql(u8, name, entry[0])) {
+            entry[1].* = symbol;
+            return 0;
+        }
+    }
+    return 0;
+}
+
 fn lua_quit(state: ?*c.lua_State) callconv(.c) c_int {
     const s = state orelse return 0;
     create_action_table(s, "Quit");
@@ -967,6 +999,12 @@ fn lua_restart(state: ?*c.lua_State) callconv(.c) c_int {
 fn lua_toggle_gaps(state: ?*c.lua_State) callconv(.c) c_int {
     const s = state orelse return 0;
     create_action_table(s, "ToggleGaps");
+    return 1;
+}
+
+fn lua_show_keybinds(state: ?*c.lua_State) callconv(.c) c_int {
+    const s = state orelse return 0;
+    create_action_table(s, "ShowKeybinds");
     return 1;
 }
 
@@ -1063,6 +1101,7 @@ fn parse_action(name: []const u8) ?Action {
         .{ "KillClient", Action.kill_client },
         .{ "Quit", Action.quit },
         .{ "Restart", Action.restart },
+        .{ "ShowKeybinds", Action.show_keybinds },
         .{ "FocusStack", Action.focus_next },
         .{ "MoveStack", Action.move_next },
         .{ "ResizeMaster", Action.resize_master },

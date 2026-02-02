@@ -107,50 +107,50 @@ oxwm.key.bind({ modkey, "Shift" }, "J", oxwm.client.move_stack(1))
 oxwm.key.bind({ modkey, "Shift" }, "K", oxwm.client.move_stack(-1))
 
 -- View tag (switch workspace)
-oxwm.key.bind({ modkey }, "1", oxwm.tag.view(0))
-oxwm.key.bind({ modkey }, "2", oxwm.tag.view(1))
-oxwm.key.bind({ modkey }, "3", oxwm.tag.view(2))
-oxwm.key.bind({ modkey }, "4", oxwm.tag.view(3))
-oxwm.key.bind({ modkey }, "5", oxwm.tag.view(4))
-oxwm.key.bind({ modkey }, "6", oxwm.tag.view(5))
-oxwm.key.bind({ modkey }, "7", oxwm.tag.view(6))
-oxwm.key.bind({ modkey }, "8", oxwm.tag.view(7))
-oxwm.key.bind({ modkey }, "9", oxwm.tag.view(8))
+oxwm.key.bind({ modkey }, "1", oxwm.tag.view(1))
+oxwm.key.bind({ modkey }, "2", oxwm.tag.view(2))
+oxwm.key.bind({ modkey }, "3", oxwm.tag.view(3))
+oxwm.key.bind({ modkey }, "4", oxwm.tag.view(4))
+oxwm.key.bind({ modkey }, "5", oxwm.tag.view(5))
+oxwm.key.bind({ modkey }, "6", oxwm.tag.view(6))
+oxwm.key.bind({ modkey }, "7", oxwm.tag.view(7))
+oxwm.key.bind({ modkey }, "8", oxwm.tag.view(8))
+oxwm.key.bind({ modkey }, "9", oxwm.tag.view(9))
 
 -- Move window to tag
-oxwm.key.bind({ modkey, "Shift" }, "1", oxwm.tag.move_to(0))
-oxwm.key.bind({ modkey, "Shift" }, "2", oxwm.tag.move_to(1))
-oxwm.key.bind({ modkey, "Shift" }, "3", oxwm.tag.move_to(2))
-oxwm.key.bind({ modkey, "Shift" }, "4", oxwm.tag.move_to(3))
-oxwm.key.bind({ modkey, "Shift" }, "5", oxwm.tag.move_to(4))
-oxwm.key.bind({ modkey, "Shift" }, "6", oxwm.tag.move_to(5))
-oxwm.key.bind({ modkey, "Shift" }, "7", oxwm.tag.move_to(6))
-oxwm.key.bind({ modkey, "Shift" }, "8", oxwm.tag.move_to(7))
-oxwm.key.bind({ modkey, "Shift" }, "9", oxwm.tag.move_to(8))
+oxwm.key.bind({ modkey, "Shift" }, "1", oxwm.tag.move_to(1))
+oxwm.key.bind({ modkey, "Shift" }, "2", oxwm.tag.move_to(2))
+oxwm.key.bind({ modkey, "Shift" }, "3", oxwm.tag.move_to(3))
+oxwm.key.bind({ modkey, "Shift" }, "4", oxwm.tag.move_to(4))
+oxwm.key.bind({ modkey, "Shift" }, "5", oxwm.tag.move_to(5))
+oxwm.key.bind({ modkey, "Shift" }, "6", oxwm.tag.move_to(6))
+oxwm.key.bind({ modkey, "Shift" }, "7", oxwm.tag.move_to(7))
+oxwm.key.bind({ modkey, "Shift" }, "8", oxwm.tag.move_to(8))
+oxwm.key.bind({ modkey, "Shift" }, "9", oxwm.tag.move_to(9))
 
 -- Toggle view (view multiple tags at once) - dwm-style multi-tag viewing
 -- Example: Mod+Ctrl+2 while on tag 1 will show BOTH tags 1 and 2
-oxwm.key.bind({ modkey, "Control" }, "1", oxwm.tag.toggleview(0))
-oxwm.key.bind({ modkey, "Control" }, "2", oxwm.tag.toggleview(1))
-oxwm.key.bind({ modkey, "Control" }, "3", oxwm.tag.toggleview(2))
-oxwm.key.bind({ modkey, "Control" }, "4", oxwm.tag.toggleview(3))
-oxwm.key.bind({ modkey, "Control" }, "5", oxwm.tag.toggleview(4))
-oxwm.key.bind({ modkey, "Control" }, "6", oxwm.tag.toggleview(5))
-oxwm.key.bind({ modkey, "Control" }, "7", oxwm.tag.toggleview(6))
-oxwm.key.bind({ modkey, "Control" }, "8", oxwm.tag.toggleview(7))
-oxwm.key.bind({ modkey, "Control" }, "9", oxwm.tag.toggleview(8))
+oxwm.key.bind({ modkey, "Control" }, "1", oxwm.tag.toggleview(1))
+oxwm.key.bind({ modkey, "Control" }, "2", oxwm.tag.toggleview(2))
+oxwm.key.bind({ modkey, "Control" }, "3", oxwm.tag.toggleview(3))
+oxwm.key.bind({ modkey, "Control" }, "4", oxwm.tag.toggleview(4))
+oxwm.key.bind({ modkey, "Control" }, "5", oxwm.tag.toggleview(5))
+oxwm.key.bind({ modkey, "Control" }, "6", oxwm.tag.toggleview(6))
+oxwm.key.bind({ modkey, "Control" }, "7", oxwm.tag.toggleview(7))
+oxwm.key.bind({ modkey, "Control" }, "8", oxwm.tag.toggleview(8))
+oxwm.key.bind({ modkey, "Control" }, "9", oxwm.tag.toggleview(9))
 
 -- Toggle tag (window on multiple tags) - dwm-style sticky windows
 -- Example: Mod+Ctrl+Shift+2 puts focused window on BOTH current tag and tag 2
-oxwm.key.bind({ modkey, "Control", "Shift" }, "1", oxwm.tag.toggletag(0))
-oxwm.key.bind({ modkey, "Control", "Shift" }, "2", oxwm.tag.toggletag(1))
-oxwm.key.bind({ modkey, "Control", "Shift" }, "3", oxwm.tag.toggletag(2))
-oxwm.key.bind({ modkey, "Control", "Shift" }, "4", oxwm.tag.toggletag(3))
-oxwm.key.bind({ modkey, "Control", "Shift" }, "5", oxwm.tag.toggletag(4))
-oxwm.key.bind({ modkey, "Control", "Shift" }, "6", oxwm.tag.toggletag(5))
-oxwm.key.bind({ modkey, "Control", "Shift" }, "7", oxwm.tag.toggletag(6))
-oxwm.key.bind({ modkey, "Control", "Shift" }, "8", oxwm.tag.toggletag(7))
-oxwm.key.bind({ modkey, "Control", "Shift" }, "9", oxwm.tag.toggletag(8))
+oxwm.key.bind({ modkey, "Control", "Shift" }, "1", oxwm.tag.toggletag(1))
+oxwm.key.bind({ modkey, "Control", "Shift" }, "2", oxwm.tag.toggletag(2))
+oxwm.key.bind({ modkey, "Control", "Shift" }, "3", oxwm.tag.toggletag(3))
+oxwm.key.bind({ modkey, "Control", "Shift" }, "4", oxwm.tag.toggletag(4))
+oxwm.key.bind({ modkey, "Control", "Shift" }, "5", oxwm.tag.toggletag(5))
+oxwm.key.bind({ modkey, "Control", "Shift" }, "6", oxwm.tag.toggletag(6))
+oxwm.key.bind({ modkey, "Control", "Shift" }, "7", oxwm.tag.toggletag(7))
+oxwm.key.bind({ modkey, "Control", "Shift" }, "8", oxwm.tag.toggletag(8))
+oxwm.key.bind({ modkey, "Control", "Shift" }, "9", oxwm.tag.toggletag(9))
 
 oxwm.key.bind({ modkey }, "Tab", oxwm.tag.view_next())
 oxwm.key.bind({ modkey, "Shift" }, "Tab", oxwm.tag.view_previous())
@@ -159,11 +159,11 @@ oxwm.key.bind({ modkey, "Control" }, "Tab", oxwm.tag.view_next_nonempty())
 oxwm.key.bind({ modkey, "Control", "Shift" }, "Tab", oxwm.tag.view_previous_nonempty())
 
 oxwm.bar.set_blocks({
+
     oxwm.bar.block.battery({
-        format = "Bat: {}%",
-        charging = "⚡ Bat: {}%",
-        discharging = "🔋 Bat: {}%",
-        full = "✓ Bat: {}%",
+        fmt_charging = "⚡ Bat: {}%",
+        fmt_discharging = "- Bat: {}%",
+        fmt_full = "✓ Bat: {}%",
         interval = 30,
         color = colors.green,
         underline = true,
@@ -179,20 +179,20 @@ oxwm.bar.set_blocks({
     --     underline = true
     -- }),
     oxwm.bar.block.static({
-        text = " │  ",
+        text = "│",
         format = "",
         interval = 999999999,
         color = colors.lavender,
         underline = false
     }),
     oxwm.bar.block.ram({
-        format = "󰍛 {used}/{total} GB",
+        format = "  {used}/{total} GB",
         interval = 5,
         color = colors.light_blue,
         underline = true
     }),
     oxwm.bar.block.static({
-        text = " │  ",
+        text = "│",
         format = "",
         interval = 999999999,
         color = colors.lavender,
@@ -200,13 +200,13 @@ oxwm.bar.set_blocks({
     }),
     oxwm.bar.block.shell({
         command = "uname -r",
-        format = " {}",
+        format = " {}",
         interval = 999999999,
         color = colors.red,
         underline = true
     }),
     oxwm.bar.block.static({
-        text = " │  ",
+        text = "│",
         format = "",
         interval = 999999999,
         color = colors.lavender,
