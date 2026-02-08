@@ -311,6 +311,9 @@ pub const Keybind_Overlay = struct {
     }
 
     fn keysym_to_name(keysym: u64) []const u8 {
+        const upper_letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        const digits = "0123456789";
+
         return switch (keysym) {
             0xff0d => "Return",
             0x0020 => "Space",
@@ -336,9 +339,9 @@ pub const Keybind_Overlay = struct {
             0x002c => ",",
             0x002e => ".",
             0x002f => "/",
-            'a'...'z' => |c| &[_]u8{@intCast(c - 32)},
-            'A'...'Z' => |c| &[_]u8{@intCast(c)},
-            '0'...'9' => |c| &[_]u8{@intCast(c)},
+            'a'...'z' => |c| upper_letters[c - 'a' ..][0..1],
+            'A'...'Z' => |c| upper_letters[c - 'A' ..][0..1],
+            '0'...'9' => |c| digits[c - '0' ..][0..1],
             else => "?",
         };
     }
