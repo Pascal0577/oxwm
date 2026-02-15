@@ -1,52 +1,43 @@
 build:
-    cargo build --release
+    zig build -Doptimize=ReleaseSafe
 
 install: build
-    cp target/release/oxwm /usr/bin/oxwm
-    cp resources/oxwm.desktop /usr/share/xsessions/oxwm.desktop
-    chmod +x /usr/bin/oxwm
-    @echo "✓ oxwm installed to /usr/bin/oxwm"
-    @echo "  Run 'oxwm --init' to create your config"
+    sudo cp zig-out/bin/oxwm /usr/bin/oxwm
+    sudo cp resources/oxwm.desktop /usr/share/xsessions/oxwm.desktop
+    sudo chmod +x /usr/bin/oxwm
+    @echo "oxwm installed to /usr/bin/oxwm"
 
 checkinstall:
     checkinstall --pkgname oxwm --exclude /root -y just install
 
 uninstall:
-    rm -f /usr/bin/oxwm
-    @echo "✓ oxwm uninstalled"
-    @echo "  Your config at ~/.config/oxwm/ is preserved"
+    sudo rm -f /usr/bin/oxwm
+    @echo "oxwm uninstalled"
+    @echo "Your config at ~/.config/oxwm/ is preserved"
 
 clean:
-    cargo clean
+    rm -rf zig-out .zig-cache
 
 test-clean:
     pkill Xephyr || true
     rm -rf ~/.config/oxwm
     Xephyr -screen 1280x800 :1 & sleep 1
-    DISPLAY=:1 cargo run --release -- --config resources/test-config.lua
+    DISPLAY=:1 zig build run -- -c resources/config.lua
 
 test:
-    pkill Xephyr || true
-    Xephyr -screen 1280x800 :2 & sleep 1
-    DISPLAY=:2 cargo run --release -- --config resources/test-config.lua
+    zig build xephyr
 
 test-multimon:
-    pkill Xephyr || true
-    Xephyr +xinerama -screen 640x480 -screen 640x480 :1 & sleep 1
-    DISPLAY=:1 cargo run --release -- --config resources/test-config.lua
-
-init:
-    cargo run --release -- --init
+    zig build xephyr-multi
 
 edit:
     $EDITOR ~/.config/oxwm/config.lua
 
-check:
-    cargo clippy -- -W clippy::all
-    cargo fmt -- --check
-
 fmt:
-    cargo fmt
+    zig build fmt
 
-pre-commit: fmt check build
-    @echo "✓ All checks passed!"
+pre-commit: fmt build
+    @echo "All checks passed!"
+
+run:
+    zig build run

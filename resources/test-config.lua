@@ -159,11 +159,11 @@ oxwm.key.bind({ modkey, "Control" }, "Tab", oxwm.tag.view_next_nonempty())
 oxwm.key.bind({ modkey, "Control", "Shift" }, "Tab", oxwm.tag.view_previous_nonempty())
 
 oxwm.bar.set_blocks({
+
     oxwm.bar.block.battery({
-        format = "Bat: {}%",
-        charging = "⚡ Bat: {}%",
-        discharging = "🔋 Bat: {}%",
-        full = "✓ Bat: {}%",
+        fmt_charging = "⚡ Bat: {}%",
+        fmt_discharging = "- Bat: {}%",
+        fmt_full = "✓ Bat: {}%",
         interval = 30,
         color = colors.green,
         underline = true,
@@ -179,20 +179,20 @@ oxwm.bar.set_blocks({
     --     underline = true
     -- }),
     oxwm.bar.block.static({
-        text = " │  ",
+        text = "│",
         format = "",
         interval = 999999999,
         color = colors.lavender,
         underline = false
     }),
     oxwm.bar.block.ram({
-        format = "󰍛 {used}/{total} GB",
+        format = "  {used}/{total} GB",
         interval = 5,
         color = colors.light_blue,
         underline = true
     }),
     oxwm.bar.block.static({
-        text = " │  ",
+        text = "│",
         format = "",
         interval = 999999999,
         color = colors.lavender,
@@ -200,13 +200,13 @@ oxwm.bar.set_blocks({
     }),
     oxwm.bar.block.shell({
         command = "uname -r",
-        format = " {}",
+        format = " {}",
         interval = 999999999,
         color = colors.red,
         underline = true
     }),
     oxwm.bar.block.static({
-        text = " │  ",
+        text = "│",
         format = "",
         interval = 999999999,
         color = colors.lavender,

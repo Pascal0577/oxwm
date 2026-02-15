@@ -23,9 +23,8 @@
       default = pkgs.mkShell {
         inputsFrom = [self.packages.${pkgs.stdenv.hostPlatform.system}.oxwm];
         packages = [
-          pkgs.rustc
-          pkgs.cargo
-          pkgs.clippy
+          pkgs.zig
+          pkgs.zls
           pkgs.alacritty
           pkgs.just
           pkgs.xorg.xorgserver
@@ -33,7 +32,6 @@
         shellHook = ''
           export PS1="(oxwm-dev) $PS1"
         '';
-        env.RUST_SRC_PATH = "${pkgs.rustPlatform.rustLibSrc}";
       };
     });
 
