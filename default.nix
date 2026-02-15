@@ -15,7 +15,7 @@ stdenv.mkDerivation (finalAttrs: {
 
   src = ./.;
 
-  nativeBuildInputs = [zig pkg-config];
+  nativeBuildInputs = [zig.hook pkg-config];
 
   buildInputs = [
     xorg.libX11
@@ -26,20 +26,10 @@ stdenv.mkDerivation (finalAttrs: {
     fontconfig
   ];
 
-  dontConfigure = true;
-
-  buildPhase = ''
-    runHook preBuild
-    zig build -Doptimize=ReleaseSafe --prefix $out
-    runHook postBuild
-  '';
-
-  installPhase = ''
-    runHook preInstall
+  postInstall = ''
     install resources/oxwm.desktop -Dt $out/share/xsessions
     install -Dm644 resources/oxwm.1 -t $out/share/man/man1
     install -Dm644 templates/oxwm.lua -t $out/share/oxwm
-    runHook postInstall
   '';
 
   # tests require a running X server
