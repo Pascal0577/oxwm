@@ -40,6 +40,16 @@ pub fn build(b: *std.Build) void {
     });
     test_step.dependOn(&b.addRunArtifact(unit_tests).step);
 
+    const src_main_unit_tests = b.addTest(.{
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/main.zig"),
+            .target = target,
+            .optimize = optimize,
+        }),
+    });
+    src_main_unit_tests.linkLibC();
+    test_step.dependOn(&b.addRunArtifact(src_main_unit_tests).step);
+
     const lua_config_tests = b.addTest(.{
         .root_module = b.createModule(.{
             .root_source_file = b.path("tests/lua_config_tests.zig"),

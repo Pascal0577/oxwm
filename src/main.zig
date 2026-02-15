@@ -562,7 +562,7 @@ fn get_state(display: *Display, window: xlib.Window) c_long {
         return WithdrawnState;
     }
 
-    const state: c_long = @as(*c_long, @alignCast(@ptrCast(prop))).*;
+    const state: c_long = @as(*c_long, @ptrCast(@alignCast(prop))).*;
     _ = xlib.XFree(prop);
     return state;
 }
@@ -2505,4 +2505,8 @@ fn set_urgent(display: *Display, client: *Client, urgent: bool) void {
         _ = xlib.XSetWMHints(display.handle, client.window, hints);
         _ = xlib.XFree(@ptrCast(hints));
     }
+}
+
+test {
+    _ = @import("x11/events.zig");
 }

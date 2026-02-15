@@ -44,41 +44,16 @@ pub fn get_event_type(event: *const xlib.XEvent) EventType {
 }
 
 pub fn event_name(event_type: EventType) []const u8 {
-    return switch (event_type) {
-        .key_press => "key_press",
-        .key_release => "key_release",
-        .button_press => "button_press",
-        .button_release => "button_release",
-        .motion_notify => "motion_notify",
-        .enter_notify => "enter_notify",
-        .leave_notify => "leave_notify",
-        .focus_in => "focus_in",
-        .focus_out => "focus_out",
-        .keymap_notify => "keymap_notify",
-        .expose => "expose",
-        .graphics_expose => "graphics_expose",
-        .no_expose => "no_expose",
-        .visibility_notify => "visibility_notify",
-        .create_notify => "create_notify",
-        .destroy_notify => "destroy_notify",
-        .unmap_notify => "unmap_notify",
-        .map_notify => "map_notify",
-        .map_request => "map_request",
-        .reparent_notify => "reparent_notify",
-        .configure_notify => "configure_notify",
-        .configure_request => "configure_request",
-        .gravity_notify => "gravity_notify",
-        .resize_request => "resize_request",
-        .circulate_notify => "circulate_notify",
-        .circulate_request => "circulate_request",
-        .property_notify => "property_notify",
-        .selection_clear => "selection_clear",
-        .selection_request => "selection_request",
-        .selection_notify => "selection_notify",
-        .colormap_notify => "colormap_notify",
-        .client_message => "client_message",
-        .mapping_notify => "mapping_notify",
-        .generic_event => "generic_event",
-        _ => "unknown",
-    };
+    if (@intFromEnum(event_type) > @intFromEnum(EventType.generic_event)) return "unknown";
+
+    return @tagName(event_type);
+}
+
+test event_name {
+    const testing = std.testing;
+
+    const name = event_name(.key_press);
+    try testing.expectEqualStrings("key_press", name);
+
+    try testing.expectEqualStrings("unknown", event_name(@enumFromInt(100)));
 }
