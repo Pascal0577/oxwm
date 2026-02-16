@@ -13,7 +13,7 @@ pub const Pertag = struct {
     nmasters: [10]i32 = [_]i32{1} ** 10,
     mfacts: [10]f32 = [_]f32{0.55} ** 10,
     sellts: [10]u32 = [_]u32{0} ** 10,
-    ltidxs: [10][4]?*const Layout = [_][4]?*const Layout{.{ null, null, null, null }} ** 10,
+    ltidxs: [10][5]?*const Layout = [_][5]?*const Layout{.{ null, null, null, null, null }} ** 10,
     showbars: [10]bool = [_]bool{true} ** 10,
 };
 
@@ -46,7 +46,7 @@ pub const Monitor = struct {
     stack: ?*Client = null,
     next: ?*Monitor = null,
     bar_win: xlib.Window = 0,
-    lt: [4]?*const Layout = .{ null, null, null, null },
+    lt: [5]?*const Layout = .{ null, null, null, null, null },
     pertag: Pertag = Pertag{},
 };
 

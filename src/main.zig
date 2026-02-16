@@ -9,6 +9,7 @@ const tiling = @import("layouts/tiling.zig");
 const monocle = @import("layouts/monocle.zig");
 const floating = @import("layouts/floating.zig");
 const scrolling = @import("layouts/scrolling.zig");
+const grid = @import("layouts/grid.zig");
 const animations = @import("animations.zig");
 const bar_mod = @import("bar/bar.zig");
 const blocks_mod = @import("bar/blocks/blocks.zig");
@@ -349,11 +350,13 @@ fn setup_monitors(display: *Display) void {
                 mon.lt[1] = &monocle.layout;
                 mon.lt[2] = &floating.layout;
                 mon.lt[3] = &scrolling.layout;
+                mon.lt[4] = &grid.layout;
                 for (0..10) |i| {
                     mon.pertag.ltidxs[i][0] = mon.lt[0];
                     mon.pertag.ltidxs[i][1] = mon.lt[1];
                     mon.pertag.ltidxs[i][2] = mon.lt[2];
                     mon.pertag.ltidxs[i][3] = mon.lt[3];
+                    mon.pertag.ltidxs[i][4] = mon.lt[4];
                 }
 
                 if (prev_monitor) |prev| {
@@ -387,11 +390,13 @@ fn setup_monitors(display: *Display) void {
     mon.lt[1] = &monocle.layout;
     mon.lt[2] = &floating.layout;
     mon.lt[3] = &scrolling.layout;
+    mon.lt[4] = &grid.layout;
     for (0..10) |i| {
         mon.pertag.ltidxs[i][0] = mon.lt[0];
         mon.pertag.ltidxs[i][1] = mon.lt[1];
         mon.pertag.ltidxs[i][2] = mon.lt[2];
         mon.pertag.ltidxs[i][3] = mon.lt[3];
+        mon.pertag.ltidxs[i][4] = mon.lt[4];
     }
     monitor_mod.monitors = mon;
     monitor_mod.selected_monitor = mon;
@@ -1466,7 +1471,7 @@ fn setmfact(delta: f32) void {
 
 fn cycle_layout() void {
     const monitor = monitor_mod.selected_monitor orelse return;
-    const new_lt = (monitor.sel_lt + 1) % 4;
+    const new_lt = (monitor.sel_lt + 1) % 5;
     monitor.sel_lt = new_lt;
     monitor.pertag.sellts[monitor.pertag.curtag] = new_lt;
     if (new_lt != 3) {
@@ -1491,6 +1496,8 @@ fn set_layout(layout_name: ?[]const u8) void {
         2
     else if (std.mem.eql(u8, name, "scrolling") or std.mem.eql(u8, name, "[S]"))
         3
+    else if (std.mem.eql(u8, name, "grid") or std.mem.eql(u8, name, "[#]"))
+        4
     else {
         std.debug.print("set_layout: unknown layout '{s}'\n", .{name});
         return;
