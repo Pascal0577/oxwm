@@ -4,7 +4,7 @@
 [[file:./images/oxwm1.png]]
 
 * Table of Contents :toc:
-- [[#oxwm--dwm-but-better-and-oxidized][OXWM — DWM but Better (and oxidized)]]
+- [[#oxwm--dwm-but-better][OXWM — DWM but Better]]
 - [[#installation][Installation]]
   - [[#nixos-with-flakes][NixOS (with Flakes)]]
   - [[#arch-linux][Arch Linux]]
@@ -33,8 +33,8 @@
   - [[#future-enhancements-][Future Enhancements]]
 - [[#license][License]]
 
-* OXWM — DWM but Better (and oxidized)
-A dynamic window manager written in Rust, inspired by dwm but designed to evolve beyond it. OXWM features a clean, functional Lua API for configuration with hot-reloading support, ditching the suckless philosophy of *"edit + recompile"*. Instead, we focus on lowering friction for users with sane defaults, LSP-powered autocomplete, and instant configuration changes without restarting your X session.
+* OXWM — DWM but Better
+A dynamic window manager written in Zig, inspired by dwm but designed to evolve beyond it. OXWM features a clean, functional Lua API for configuration with hot-reloading support, ditching the suckless philosophy of *"edit + recompile"*. Instead, we focus on lowering friction for users with sane defaults, LSP-powered autocomplete, and instant configuration changes without restarting your X session.
 
 *Documentation:* [[https://ox-docs.vercel.app/][ox-docs.vercel.app]]
 
@@ -112,8 +112,8 @@ cd oxwm
 nix develop
 
 # Build and test
-cargo build
-just test
+zig build
+zig build test
 #+end_src
 
 ** Arch Linux
@@ -127,7 +127,7 @@ This will automatically put a desktop session file into your xsessions directory
 Manually:
 Install dependencies:
 #+begin_src sh
-sudo pacman -S rust cargo libx11 libxft freetype2 fontconfig pkg-config
+sudo pacman -S zig lua libx11 libxft freetype2 fontconfig libxinerama
 #+end_src
 See Build from source
 
@@ -135,13 +135,13 @@ See Build from source
 #+begin_src sh
 git clone https://github.com/tonybanters/oxwm
 cd oxwm
-cargo build --release
-sudo cp target/release/oxwm /usr/local/bin/
+zig build -Doptimize=ReleaseFast
+zig build install-system  # installs to /usr/bin, adds desktop file and man page
 #+end_src
 
-Or use the justfile:
+To uninstall:
 #+begin_src sh
-just install
+zig build uninstall
 #+end_src
 
 ** Setting up OXWM
@@ -235,7 +235,7 @@ When contributing to OXWM:
 
 1. Never commit your personal =~/.config/oxwm/config.lua=
 2. Only modify =templates/config.lua= if adding new configuration options
-3. Test your changes with =just test= using Xephyr/Xwayland
+3. Test your changes with =zig build xephyr= using Xephyr or =zig build xwayland= using Xwayland
 4. Document any new features or keybindings
 
 * Key Bindings
@@ -313,96 +313,57 @@ Default keybindings (fully customizable in =~/.config/oxwm/config.lua=):
 Test OXWM in a nested X server without affecting your current session:
 
 #+begin_src sh
-just test
+zig build xephyr
 #+end_src
 
-This starts Xephyr on display :1 and launches OXWM inside it.
+This starts Xephyr on display :2 and launches OXWM inside it.
+
+For multi-monitor testing:
+#+begin_src sh
+zig build xephyr-multi
+#+end_src
 
 Or manually:
 #+begin_src sh
-Xephyr -screen 1280x800 :1 &
-DISPLAY=:1 cargo run
+Xephyr -screen 1280x800 :2 &
+DISPLAY=:2 zig build run
 #+end_src
 
 * Project Structure
 #+begin_src sh
 src/
-├── bin/
-│   └── main.rs                          [Entry point - handles CLI args, config loading, WM init]
-│       ├── main()                       [Parse args, load config, start WM]
-│       ├── load_config()                [Lua config loading with auto-init]
-│       └── init_config()                [Create default config.lua + oxwm.lua]
-│
-├── lib.rs                               [Library exports]
-│
-├── window_manager.rs                    [CORE - X11 event handling]
-│   ├── struct WindowManager
-│   │   ├── connection: RustConnection   [X11 connection]
-│   │   ├── windows: Vec<Window>         [All managed windows]
-│   │   ├── focused_window: Option<Window>
-│   │   ├── layout: Box<dyn Layout>
-│   │   ├── window_tags: HashMap<Window, TagMask>
-│   │   ├── selected_tags: TagMask
-│   │   └── bars: Vec<Bar>               [Status bars (multi-monitor)]
-│   │
-│   ├── new()                            [Initialize WM, grab root, restore tags, scan windows]
-│   ├── run()                            [Main event loop with block updates]
-│   ├── handle_event()                   [Route X11 events]
-│   ├── try_reload_config()              [Hot-reload Lua config]
-│   └── ...                              [Window/tag/focus management]
+├── main.zig                             [Entry point - handles CLI args, config loading, WM init]
+├── client.zig                           [Client/window management]
+├── monitor.zig                          [Monitor handling and multi-monitor support]
+├── overlay.zig                          [Overlay rendering]
+├── animations.zig                       [Animation support]
 │
 ├── config/
-│   ├── mod.rs                           [Config module exports]
-│   ├── lua.rs                           [Lua config parser - loads and executes config.lua]
-│   └── lua_api.rs                       [Functional Lua API implementation]
-│       ├── register_api()               [Set up oxwm.* functions in Lua]
-│       ├── register_spawn()             [oxwm.spawn()]
-│       ├── register_key_module()        [oxwm.key.bind(), oxwm.key.chord()]
-│       ├── register_gaps_module()       [oxwm.gaps.*]
-│       ├── register_border_module()     [oxwm.border.*]
-│       ├── register_client_module()     [oxwm.client.*]
-│       ├── register_layout_module()     [oxwm.layout.*]
-│       ├── register_tag_module()        [oxwm.tag.*]
-│       ├── register_bar_module()        [oxwm.bar.*]
-│       └── register_misc()              [oxwm.set_terminal(), etc.]
+│   ├── config.zig                       [Config struct and defaults]
+│   └── lua.zig                          [Lua config parser - loads and executes config.lua]
 │
 ├── bar/
-│   ├── mod.rs                           [Re-exports: Bar, BlockCommand, BlockConfig]
-│   ├── bar.rs
-│   │   ├── struct Bar                   [Status bar window with XFT support]
-│   │   ├── new()                        [Create bar X11 window, load font, init blocks]
-│   │   ├── draw()                       [Render tags + blocks with underlines]
-│   │   ├── update_blocks()              [Update block content based on intervals]
-│   │   └── handle_click()               [Detect which tag was clicked]
-│   ├── font.rs
-│   │   ├── struct Font                  [XFT font wrapper]
-│   │   └── draw_text()                  [Render text with color]
+│   ├── bar.zig                          [Status bar with XFT support]
 │   └── blocks/
-│       ├── mod.rs                       [Block trait, BlockConfig, BlockCommand enum]
-│       ├── battery.rs                   [Battery status block]
-│       ├── datetime.rs                  [Date/time formatting block]
-│       ├── ram.rs                       [RAM usage block]
-│       ├── shell.rs                     [Shell command execution block]
-│       └── static.rs                    [Static text block]
+│       ├── blocks.zig                   [Block system core]
+│       ├── format.zig                   [Block formatting utilities]
+│       ├── battery.zig                  [Battery status block]
+│       ├── datetime.zig                 [Date/time formatting block]
+│       ├── ram.zig                      [RAM usage block]
+│       ├── cpu_temp.zig                 [CPU temperature block]
+│       ├── shell.zig                    [Shell command execution block]
+│       └── static.zig                   [Static text block]
 │
-├── keyboard/
-│   ├── mod.rs                           [Re-exports]
-│   ├── keysyms.rs                       [X11 keysym constants]
-│   └── handlers.rs
-│       ├── enum KeyAction               [All keyboard actions]
-│       ├── enum Arg                     [Action arguments]
-│       ├── struct KeyBinding            [Keybinding + keychord support]
-│       └── struct KeyPress              [Individual key press in chord]
+├── layouts/
+│   ├── tiling.zig                       [Tiling layout with master/stack]
+│   ├── monocle.zig                      [Fullscreen stacking layout]
+│   ├── floating.zig                     [Floating layout]
+│   └── scrolling.zig                    [Scrolling layout]
 │
-├── layout/
-│   ├── mod.rs                           [Layout trait definition]
-│   ├── tiling.rs                        [Tiling layout with master/stack]
-│   ├── monocle.rs                       [Fullscreen stacking layout]
-│   ├── grid.rs                          [Equal-sized grid layout]
-│   ├── tabbed.rs                        [Tabbed container layout]
-│   └── normie.rs                        [Floating-by-default layout]
-│
-└── errors.rs                            [Error types: WmError, ConfigError, etc.]
+└── x11/
+    ├── xlib.zig                         [X11/Xlib bindings]
+    ├── display.zig                      [Display management]
+    └── events.zig                       [X11 event handling]
 
 templates/
 ├── config.lua                           [Default config with functional API]
@@ -411,10 +372,10 @@ templates/
 
 * Architecture Notes
 ** Lua Configuration System
-OXWM uses mlua to embed a Lua interpreter. The functional API is implemented in =src/config/lua_api.rs=:
+OXWM embeds a Lua 5.4 interpreter using Zig's C interop. The functional API is implemented in =src/config/lua.zig=:
 - Each API function (e.g., =oxwm.border.set_width()=) is registered as a Lua function
-- Functions modify a shared ConfigBuilder that accumulates settings
-- When config execution completes, the builder produces the final Config struct
+- Functions modify the config state that accumulates settings
+- When config execution completes, the final Config struct is produced
 - Type definitions in =templates/oxwm.lua= provide LSP autocomplete and documentation
 
 ** Tag System

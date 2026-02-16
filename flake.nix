@@ -26,7 +26,6 @@
           pkgs.zig
           pkgs.zls
           pkgs.alacritty
-          pkgs.just
           pkgs.xorg.xorgserver
         ];
         shellHook = ''

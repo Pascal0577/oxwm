@@ -86,6 +86,29 @@ pub fn build(b: *std.Build) void {
 
     const clean_step = b.step("clean", "Remove build artifacts");
     clean_step.dependOn(&b.addSystemCommand(&.{ "rm", "-rf", "zig-out", ".zig-cache" }).step);
+
+    const install_step = b.step("install-system", "Install oxwm system-wide (requires sudo)");
+    install_step.dependOn(b.getInstallStep());
+    install_step.dependOn(&b.addSystemCommand(&.{
+        "sudo", "sh", "-c",
+        "cp zig-out/bin/oxwm /usr/bin/oxwm && " ++
+            "chmod +x /usr/bin/oxwm && " ++
+            "mkdir -p /usr/share/xsessions && " ++
+            "cp resources/oxwm.desktop /usr/share/xsessions/oxwm.desktop && " ++
+            "mkdir -p /usr/share/man/man1 && " ++
+            "cp resources/oxwm.1 /usr/share/man/man1/oxwm.1 && " ++
+            "mkdir -p /usr/share/oxwm && " ++
+            "cp templates/oxwm.lua /usr/share/oxwm/oxwm.lua && " ++
+            "echo 'oxwm installed to /usr/bin/oxwm'",
+    }).step);
+
+    const uninstall_step = b.step("uninstall", "Uninstall oxwm from system");
+    uninstall_step.dependOn(&b.addSystemCommand(&.{
+        "sudo", "sh", "-c",
+        "rm -f /usr/bin/oxwm /usr/share/xsessions/oxwm.desktop /usr/share/man/man1/oxwm.1 && " ++
+            "rm -rf /usr/share/oxwm && " ++
+            "echo 'oxwm uninstalled (config at ~/.config/oxwm preserved)'",
+    }).step);
 }
 
 fn add_xephyr_run(b: *std.Build, exe: *std.Build.Step.Compile, multimon: bool) *std.Build.Step.Run {
