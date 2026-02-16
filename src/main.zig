@@ -1,4 +1,5 @@
 const std = @import("std");
+const VERSION = "v0.11.0";
 const display_mod = @import("x11/display.zig");
 const events = @import("x11/events.zig");
 const xlib = @import("x11/xlib.zig");
@@ -161,7 +162,7 @@ pub fn main() !void {
             print_help();
             return;
         } else if (std.mem.eql(u8, arg, "-v") or std.mem.eql(u8, arg, "--version")) {
-            std.debug.print("oxwm 0.1.0\n", .{});
+            std.debug.print(VERSION, .{});
             return;
         } else if (std.mem.eql(u8, arg, "--init")) {
             init_config(allocator);
