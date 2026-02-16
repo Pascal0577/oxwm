@@ -213,6 +213,7 @@ pub fn main() !void {
     grab_keybinds(&display);
     scan_existing_windows(&display);
 
+    try run_autostart_commands(allocator, config.autostart.items);
     std.debug.print("entering event loop\n", .{});
     run_event_loop(&display);
 
@@ -1039,6 +1040,7 @@ fn spawn_child_setup() void {
 }
 
 fn spawn_command(cmd: []const u8) void {
+    std.debug.print("running cmd: {s}\n", .{cmd});
     const pid = std.posix.fork() catch return;
     if (pid == 0) {
         spawn_child_setup();
@@ -2488,6 +2490,10 @@ fn set_urgent(display: *Display, client: *Client, urgent: bool) void {
         _ = xlib.XSetWMHints(display.handle, client.window, hints);
         _ = xlib.XFree(@ptrCast(hints));
     }
+}
+
+fn run_autostart_commands(_: std.mem.Allocator, commands: []const []const u8) !void {
+    for (commands) |cmd| spawn_command(cmd);
 }
 
 test {
