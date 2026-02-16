@@ -102,7 +102,7 @@ pub fn build(b: *std.Build) void {
             "echo 'oxwm installed to /usr/bin/oxwm'",
     }).step);
 
-    const uninstall_step = b.step("uninstall", "Uninstall oxwm from system");
+    const uninstall_step = b.step("uninstall-system", "Uninstall oxwm from system");
     uninstall_step.dependOn(&b.addSystemCommand(&.{
         "sudo", "sh", "-c",
         "rm -f /usr/bin/oxwm /usr/share/xsessions/oxwm.desktop /usr/share/man/man1/oxwm.1 && " ++
