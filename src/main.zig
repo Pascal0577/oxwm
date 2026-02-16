@@ -102,35 +102,18 @@ fn print_help() void {
     , .{});
 }
 
+fn get_config_path(allocator: std.mem.Allocator) ![]u8 {
+    const home = std.posix.getenv("HOME") orelse return error.CouldNotGetHomeDir;
+    const config_path = try std.fs.path.join(allocator, &.{ home, ".config", "oxwm", "config.lua" });
+
+    return config_path;
+}
+
 fn init_config(allocator: std.mem.Allocator) void {
-    const home = std.posix.getenv("HOME") orelse {
-        std.debug.print("error: HOME environment variable not set\n", .{});
-        return;
-    };
+    const config_path = get_config_path(allocator) catch return;
+    defer allocator.free(config_path);
 
-    var path_buf: [512]u8 = undefined;
-    const config_dir = std.fmt.bufPrint(&path_buf, "{s}/.config/oxwm", .{home}) catch {
-        std.debug.print("error: path too long\n", .{});
-        return;
-    };
-
-    std.fs.cwd().makePath(config_dir) catch |err| {
-        std.debug.print("error: could not create config directory: {}\n", .{err});
-        return;
-    };
-
-    var config_path_buf: [512]u8 = undefined;
-    const config_path = std.fmt.bufPrint(&config_path_buf, "{s}/config.lua", .{config_dir}) catch {
-        std.debug.print("error: path too long\n", .{});
-        return;
-    };
-
-    const template = std.fs.cwd().readFileAlloc(allocator, "templates/config.lua", 64 * 1024) catch |err| {
-        std.debug.print("error: could not read template (templates/config.lua): {}\n", .{err});
-        std.debug.print("hint: run from the oxwm source directory, or copy templates/config.lua manually\n", .{});
-        return;
-    };
-    defer allocator.free(template);
+    const template = @embedFile("templates/config.lua");
 
     const file = std.fs.createFileAbsolute(config_path, .{}) catch |err| {
         std.debug.print("error: could not create config file: {}\n", .{err});
@@ -152,12 +135,13 @@ pub fn main() !void {
     const allocator = gpa.allocator();
     defer _ = gpa.deinit();
 
-    var config_path: ?[]const u8 = null;
+    var config_path: []const u8 = try get_config_path(allocator);
+    defer allocator.free(config_path);
     var args = std.process.args();
     _ = args.skip();
     while (args.next()) |arg| {
         if (std.mem.eql(u8, arg, "-c") or std.mem.eql(u8, arg, "--config")) {
-            config_path = args.next();
+            if (args.next()) |path| config_path = path;
         } else if (std.mem.eql(u8, arg, "-h") or std.mem.eql(u8, arg, "--help")) {
             print_help();
             return;
@@ -177,18 +161,16 @@ pub fn main() !void {
     config_mod.set_config(&config);
 
     if (lua.init(&config)) {
-        const loaded = if (config_path) |path|
-            lua.load_file(path)
-        else
-            lua.load_config();
+        const loaded = if (std.fs.cwd().statFile(config_path)) |_|
+            lua.load_file(config_path)
+        else |_| blk: {
+            init_config(allocator);
+            break :blk lua.load_config();
+        };
 
         if (loaded) {
             config_path_global = config_path;
-            if (config_path) |path| {
-                std.debug.print("loaded config from {s}\n", .{path});
-            } else {
-                std.debug.print("loaded config from ~/.config/oxwm/config.lua\n", .{});
-            }
+            std.debug.print("loaded config from {s}\n", .{config_path});
             apply_config_values();
         } else {
             std.debug.print("no config found, using defaults\n", .{});

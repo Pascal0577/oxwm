@@ -13,6 +13,10 @@ pub fn build(b: *std.Build) void {
         }),
     });
 
+    exe.root_module.addAnonymousImport("templates/config.lua", .{
+        .root_source_file = b.path("templates/config.lua"),
+    });
+
     exe.linkSystemLibrary("lua5.4");
     exe.linkSystemLibrary("X11");
     exe.linkSystemLibrary("Xinerama");
