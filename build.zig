@@ -47,6 +47,11 @@ pub fn build(b: *std.Build) void {
             .optimize = optimize,
         }),
     });
+    src_main_unit_tests.linkSystemLibrary("lua5.4");
+    src_main_unit_tests.linkSystemLibrary("X11");
+    src_main_unit_tests.linkSystemLibrary("Xinerama");
+    src_main_unit_tests.linkSystemLibrary("Xft");
+    src_main_unit_tests.linkSystemLibrary("fontconfig");
     src_main_unit_tests.linkLibC();
     test_step.dependOn(&b.addRunArtifact(src_main_unit_tests).step);
 
