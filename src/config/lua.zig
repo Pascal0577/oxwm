@@ -743,7 +743,7 @@ fn lua_rule_add(state: ?*c.lua_State) callconv(.c) c_int {
 fn lua_bar_set_font(state: ?*c.lua_State) callconv(.c) c_int {
     const cfg = config orelse return 0;
     const s = state orelse return 0;
-    if (get_string_arg(s, 1)) |font| {
+    if (dupe_lua_string(s, 1)) |font| {
         cfg.font = font;
     }
     return 0;
@@ -784,7 +784,7 @@ fn parse_block_config(state: *c.lua_State, idx: c_int) ?Block {
     c.lua_settop(state, -2);
 
     _ = c.lua_getfield(state, idx, "format");
-    const format = get_lua_string(state, -1) orelse "";
+    const format = dupe_lua_string(state, -1) orelse "";
     c.lua_settop(state, -2);
 
     _ = c.lua_getfield(state, idx, "interval");
@@ -812,17 +812,17 @@ fn parse_block_config(state: *c.lua_State, idx: c_int) ?Block {
     } else if (std.mem.eql(u8, block_type_str, "DateTime")) {
         block.block_type = .datetime;
         _ = c.lua_getfield(state, idx, "__arg");
-        block.datetime_format = get_lua_string(state, -1);
+        block.datetime_format = dupe_lua_string(state, -1);
         c.lua_settop(state, -2);
     } else if (std.mem.eql(u8, block_type_str, "Shell")) {
         block.block_type = .shell;
         _ = c.lua_getfield(state, idx, "__arg");
-        block.command = get_lua_string(state, -1);
+        block.command = dupe_lua_string(state, -1);
         c.lua_settop(state, -2);
     } else if (std.mem.eql(u8, block_type_str, "Static")) {
         block.block_type = .static;
         _ = c.lua_getfield(state, idx, "__arg");
-        if (get_lua_string(state, -1)) |text| {
+        if (dupe_lua_string(state, -1)) |text| {
             block.format = text;
         }
         c.lua_settop(state, -2);
@@ -831,19 +831,19 @@ fn parse_block_config(state: *c.lua_State, idx: c_int) ?Block {
         _ = c.lua_getfield(state, idx, "__arg");
         if (c.lua_type(state, -1) == c.LUA_TTABLE) {
             _ = c.lua_getfield(state, -1, "charging");
-            block.format_charging = get_lua_string(state, -1);
+            block.format_charging = dupe_lua_string(state, -1);
             c.lua_settop(state, -2);
 
             _ = c.lua_getfield(state, -1, "discharging");
-            block.format_discharging = get_lua_string(state, -1);
+            block.format_discharging = dupe_lua_string(state, -1);
             c.lua_settop(state, -2);
 
             _ = c.lua_getfield(state, -1, "full");
-            block.format_full = get_lua_string(state, -1);
+            block.format_full = dupe_lua_string(state, -1);
             c.lua_settop(state, -2);
 
             _ = c.lua_getfield(state, -1, "battery_name");
-            block.battery_name = get_lua_string(state, -1);
+            block.battery_name = dupe_lua_string(state, -1);
             c.lua_settop(state, -2);
         }
         c.lua_settop(state, -2);
@@ -988,7 +988,7 @@ fn create_block_table(state: *c.lua_State, block_type: [*:0]const u8, arg: ?[]co
 fn lua_set_terminal(state: ?*c.lua_State) callconv(.c) c_int {
     const cfg = config orelse return 0;
     const s = state orelse return 0;
-    if (get_string_arg(s, 1)) |term| {
+    if (dupe_lua_string(s, 1)) |term| {
         cfg.terminal = term;
     }
     return 0;
@@ -1025,7 +1025,7 @@ fn lua_set_tags(state: ?*c.lua_State) callconv(.c) c_int {
     var i: usize = 0;
     while (i < len and i < 9) : (i += 1) {
         _ = c.lua_rawgeti(s, 1, @intCast(i + 1));
-        if (get_lua_string(s, -1)) |tag_str| {
+        if (dupe_lua_string(s, -1)) |tag_str| {
             cfg.tags[i] = tag_str;
         }
         c.lua_settop(s, -2);
@@ -1037,7 +1037,7 @@ fn lua_set_tags(state: ?*c.lua_State) callconv(.c) c_int {
 fn lua_autostart(state: ?*c.lua_State) callconv(.c) c_int {
     const cfg = config orelse return 0;
     const s = state orelse return 0;
-    if (get_string_arg(s, 1)) |cmd| {
+    if (dupe_lua_string(s, 1)) |cmd| {
         cfg.add_autostart(cmd) catch return 0;
     }
     return 0;
@@ -1054,7 +1054,7 @@ fn lua_set_layout_symbol(state: ?*c.lua_State) callconv(.c) c_int {
     const cfg = config orelse return 0;
     const s = state orelse return 0;
     const name = get_string_arg(s, 1) orelse return 0;
-    const symbol = get_string_arg(s, 2) orelse return 0;
+    const symbol = dupe_lua_string(s, 2) orelse return 0;
 
     const layout_map = .{
         .{ "tiling", &cfg.layout_tile_symbol },
@@ -1156,6 +1156,13 @@ fn get_lua_string(state: *c.lua_State, idx: c_int) ?[]const u8 {
     const cstr = c.lua_tolstring(state, idx, null);
     if (cstr == null) return null;
     return std.mem.span(cstr);
+}
+
+fn dupe_lua_string(state: *c.lua_State, idx: c_int) ?[]const u8 {
+    const cfg = config orelse return null;
+    const lua_str = get_lua_string(state, idx) orelse return null;
+    const duped = cfg.allocator.dupe(u8, lua_str) catch return null;
+    return duped;
 }
 
 fn parse_color(state: *c.lua_State, idx: c_int) u32 {
