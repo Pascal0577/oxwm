@@ -88,6 +88,7 @@ fn print_help() void {
         \\OPTIONS:
         \\    --init              Create default config in ~/.config/oxwm/config.lua
         \\    --config <PATH>     Use custom config file
+        \\    --validate          Validate config file without starting window manager
         \\    --version           Print version information
         \\    --help              Print this help message
         \\
@@ -132,6 +133,31 @@ fn init_config(allocator: std.mem.Allocator) void {
     std.debug.print("No compilation needed - changes take effect immediately!\n", .{});
 }
 
+fn validate_config(allocator: std.mem.Allocator, config_path: []const u8) !void {
+    config = config_mod.Config.init(allocator);
+    defer config.deinit();
+
+    if (!lua.init(&config)) {
+        std.debug.print("error: failed to initialize lua\n", .{});
+        std.process.exit(1);
+    }
+    defer lua.deinit();
+
+    _ = std.fs.cwd().statFile(config_path) catch |err| {
+        std.debug.print("error: config file not found: {s}\n", .{config_path});
+        std.debug.print("  {}\n", .{err});
+        std.process.exit(1);
+    };
+
+    if (lua.load_file(config_path)) {
+        std.debug.print("✓ config valid: {s}\n", .{config_path});
+        std.process.exit(0);
+    } else {
+        std.debug.print("✗ config validation failed\n", .{});
+        std.process.exit(1);
+    }
+}
+
 pub fn main() !void {
     const allocator = gpa.allocator();
     defer _ = gpa.deinit();
@@ -140,6 +166,7 @@ pub fn main() !void {
     defer allocator.free(default_config_path);
 
     var config_path: []const u8 = default_config_path;
+    var validate_mode: bool = false;
     var args = std.process.args();
     _ = args.skip();
     while (args.next()) |arg| {
@@ -154,7 +181,14 @@ pub fn main() !void {
         } else if (std.mem.eql(u8, arg, "--init")) {
             init_config(allocator);
             return;
+        } else if (std.mem.eql(u8, arg, "--validate")) {
+            validate_mode = true;
         }
+    }
+
+    if (validate_mode) {
+        try validate_config(allocator, config_path);
+        return;
     }
 
     std.debug.print("oxwm starting\n", .{});
