@@ -478,9 +478,11 @@ fn lua_key_chord(state: ?*c.lua_State) callconv(.c) c_int {
         keybind.int_arg = @intCast(c.lua_tointegerx(s, -1, null));
     } else if (c.lua_type(s, -1) == c.LUA_TSTRING) {
         keybind.str_arg = get_lua_string(s, -1);
+    } else if (c.lua_type(s, -1) == c.LUA_TTABLE) {
+        keybind.str_arg = extract_spawn_command(s, -1);
     }
-    c.lua_settop(s, -2);
 
+    c.lua_settop(s, -2);
     cfg.add_keybind(keybind) catch return 0;
 
     return 0;
