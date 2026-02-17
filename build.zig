@@ -17,6 +17,8 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("templates/config.lua"),
     });
 
+    exe.use_lld = false;
+
     exe.linkSystemLibrary("lua5.4");
     exe.linkSystemLibrary("X11");
     exe.linkSystemLibrary("Xinerama");
