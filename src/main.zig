@@ -1,5 +1,5 @@
 const std = @import("std");
-const VERSION = "v0.11.1";
+const VERSION = "v0.11.2";
 const display_mod = @import("x11/display.zig");
 const events = @import("x11/events.zig");
 const xlib = @import("x11/xlib.zig");
@@ -176,7 +176,7 @@ pub fn main() !void {
             print_help();
             return;
         } else if (std.mem.eql(u8, arg, "-v") or std.mem.eql(u8, arg, "--version")) {
-            std.debug.print(VERSION, .{});
+            std.debug.print("{s}\n", .{VERSION});
             return;
         } else if (std.mem.eql(u8, arg, "--init")) {
             init_config(allocator);
