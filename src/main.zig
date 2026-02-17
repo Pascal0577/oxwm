@@ -136,8 +136,10 @@ pub fn main() !void {
     const allocator = gpa.allocator();
     defer _ = gpa.deinit();
 
-    var config_path: []const u8 = try get_config_path(allocator);
-    defer allocator.free(config_path);
+    const default_config_path = try get_config_path(allocator);
+    defer allocator.free(default_config_path);
+
+    var config_path: []const u8 = default_config_path;
     var args = std.process.args();
     _ = args.skip();
     while (args.next()) |arg| {
@@ -217,6 +219,19 @@ pub fn main() !void {
     try run_autostart_commands(allocator, config.autostart.items);
     std.debug.print("entering event loop\n", .{});
     run_event_loop(&display);
+
+    bar_mod.destroy_bars(allocator, display.handle);
+
+    var mon = monitor_mod.monitors;
+    while (mon) |m| {
+        const next = m.next;
+        monitor_mod.destroy(m);
+        mon = next;
+    }
+
+    if (keybind_overlay) |overlay| {
+        overlay.deinit(allocator);
+    }
 
     lua.deinit();
     std.debug.print("oxwm exiting\n", .{});

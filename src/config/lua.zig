@@ -1161,7 +1161,8 @@ fn get_lua_string(state: *c.lua_State, idx: c_int) ?[]const u8 {
 fn dupe_lua_string(state: *c.lua_State, idx: c_int) ?[]const u8 {
     const cfg = config orelse return null;
     const lua_str = get_lua_string(state, idx) orelse return null;
-    const duped = cfg.allocator.dupe(u8, lua_str) catch return null;
+    const arena_allocator = cfg.string_arena.allocator();
+    const duped = arena_allocator.dupe(u8, lua_str) catch return null;
     return duped;
 }
 
