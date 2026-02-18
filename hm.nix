@@ -4,7 +4,7 @@
   pkgs,
   ...
 }: let
-  inherit (lib) mkEnableOption mkOption mkIf types getExe;
+  inherit (lib) mkEnableOption mkOption mkIf types concatMapStringsSep concatStringsSep concatMapStrings boolToString optional;
   cfg = config.programs.oxwm.settings;
 
   # Converts a nix submodule into a single oxwm bar block
@@ -12,7 +12,7 @@
     common = ''
       interval = ${toString block.interval},
       color = "#${block.color}",
-      underline = ${lib.boolToString block.underline},'';
+      underline = ${boolToString block.underline},'';
   in
     "oxwm.bar.block.${block.kind}({\n"
     + (
@@ -48,16 +48,17 @@
     )
     + "})";
 
+  # Converts a nix submodule into a single oxwm window rule
   ruleToLua = rule: let
-    fields = lib.concatStringsSep ", " (
-      lib.optional (rule.match.class != null) ''class = "${rule.match.class}"''
-      ++ lib.optional (rule.match.instance != null) ''instance = "${rule.match.instance}"''
-      ++ lib.optional (rule.match.title != null) ''title = "${rule.match.title}"''
-      ++ lib.optional (rule.match.role != null) ''role = "${rule.match.role}"''
-      ++ lib.optional (rule.floating != null) ''floating = ${lib.boolToString rule.floating}''
-      ++ lib.optional (rule.tag != null) ''tag = ${toString rule.tag}''
-      ++ lib.optional (rule.fullscreen != null) ''fullscreen = ${lib.boolToString rule.fullscreen}''
-      ++ lib.optional (rule.focus != null) ''focus = ${lib.boolToString rule.fullscreen}''
+    fields = concatStringsSep ", " (
+      optional (rule.match.class != null) ''class = "${rule.match.class}"''
+      ++ optional (rule.match.instance != null) ''instance = "${rule.match.instance}"''
+      ++ optional (rule.match.title != null) ''title = "${rule.match.title}"''
+      ++ optional (rule.match.role != null) ''role = "${rule.match.role}"''
+      ++ optional (rule.floating != null) ''floating = ${boolToString rule.floating}''
+      ++ optional (rule.tag != null) ''tag = ${toString rule.tag}''
+      ++ optional (rule.fullscreen != null) ''fullscreen = ${boolToString rule.fullscreen}''
+      ++ optional (rule.focus != null) ''focus = ${boolToString rule.fullscreen}''
     );
   in "oxwm.rule.add({ ${fields} })";
 in {
@@ -391,63 +392,55 @@ in {
   };
 
   config = mkIf config.programs.oxwm.enable {
-    home.packages = [config.programs.oxwm.package];
-
-    xsession.windowManager.command = ''
-      ${config.programs.oxwm.extraSessionCommands}
-      export _JAVA_AWT_WM_NONREPARENTING=1
-      exec ${getExe config.programs.oxwm.package}
-    '';
-
     xdg.configFile."oxwm/config.lua".text = ''
       @meta
       @module 'oxwm'
 
       oxwm.set_terminal("${cfg.terminal}")
       oxwm.set_modkey("${cfg.modkey}")
-      oxwm.set_tags({${lib.concatMapStringsSep ", " (t: ''"${t}"'') cfg.tags}})
+      oxwm.set_tags({${concatMapStringsSep ", " (t: ''"${t}"'') cfg.tags}})
 
       local blocks = {
-        ${lib.concatMapStringsSep ",\n" blockToLua cfg.bar.blocks}
+        ${concatMapStringsSep ",\n" blockToLua cfg.bar.blocks}
       };
       oxwm.bar.set_blocks(blocks)
       oxwm.bar.set_font("${cfg.bar.font}")
-      oxwm.bar.set_scheme_normal(${lib.concatMapStringsSep ", " (c: ''"#${c}"'') cfg.bar.unoccupiedScheme})
-      oxwm.bar.set_scheme_occupied(${lib.concatMapStringsSep ", " (c: ''"#${c}"'') cfg.bar.occupiedScheme})
-      oxwm.bar.set_scheme_selected(${lib.concatMapStringsSep ", " (c: ''"#${c}"'') cfg.bar.selectedScheme})
-      oxwm.bar.set_scheme_urgent(${lib.concatMapStringsSep ", " (c: ''"#${c}"'') cfg.bar.urgentScheme})
-      oxwm.bar.set_hide_vacant_tags(${lib.boolToString cfg.bar.hideVacantTags})
+      oxwm.bar.set_scheme_normal(${concatMapStringsSep ", " (c: ''"#${c}"'') cfg.bar.unoccupiedScheme})
+      oxwm.bar.set_scheme_occupied(${concatMapStringsSep ", " (c: ''"#${c}"'') cfg.bar.occupiedScheme})
+      oxwm.bar.set_scheme_selected(${concatMapStringsSep ", " (c: ''"#${c}"'') cfg.bar.selectedScheme})
+      oxwm.bar.set_scheme_urgent(${concatMapStringsSep ", " (c: ''"#${c}"'') cfg.bar.urgentScheme})
+      oxwm.bar.set_hide_vacant_tags(${boolToString cfg.bar.hideVacantTags})
 
       oxwm.border.set_width(${toString cfg.border.width})
       oxwm.border.set_focused_color("#${cfg.border.focusedColor}")
       oxwm.border.set_unfocused_color("#${cfg.border.unfocusedColor}")
 
       oxwm.gaps.set_smart(${cfg.gaps.smart})
-      oxwm.gaps.set_inner(${lib.concatMapStringsSep ", " toString cfg.gaps.inner})
-      oxwm.gaps.set_outer(${lib.concatMapStringsSep ", " toString cfg.gaps.outer})
+      oxwm.gaps.set_inner(${concatMapStringsSep ", " toString cfg.gaps.inner})
+      oxwm.gaps.set_outer(${concatMapStringsSep ", " toString cfg.gaps.outer})
 
       oxwm.set_layout_symbol("tiling", "${cfg.layoutSymbol.tiling}")
       oxwm.set_layout_symbol("normie", "${cfg.layoutSymbol.normie}")
       oxwm.set_layout_symbol("tabbed", "${cfg.layoutSymbol.tabbed}")
 
-      ${lib.concatMapStrings (cmd: ''
+      ${concatMapStrings (cmd: ''
           oxwm.autostart("${cmd}")
         '')
         cfg.autostart}
-      ${lib.concatMapStrings (bind: ''
-          oxwm.key.bind({ ${lib.concatMapStringsSep ", " (m: ''"${m}"'') bind.mods} }, "${bind.key}", ${bind.action})
+      ${concatMapStrings (bind: ''
+          oxwm.key.bind({ ${concatMapStringsSep ", " (m: ''"${m}"'') bind.mods} }, "${bind.key}", ${bind.action})
         '')
         cfg.binds}
-      ${lib.concatMapStrings (chord: ''
+      ${concatMapStrings (chord: ''
           oxwm.key.chord({
-            ${lib.concatMapStringsSep ",\n  " (
-              note: ''{ { ${lib.concatMapStringsSep ", " (m: ''"${m}"'') note.mods} }, "${note.key}" }''
+            ${concatMapStringsSep ",\n  " (
+              note: ''{ { ${concatMapStringsSep ", " (m: ''"${m}"'') note.mods} }, "${note.key}" }''
             )
             chord.notes}
           }, ${chord.action})
         '')
         cfg.chords}
-      ${lib.concatMapStrings (rule: ''
+      ${concatMapStrings (rule: ''
           ${ruleToLua rule}
         '')
         cfg.rules}
