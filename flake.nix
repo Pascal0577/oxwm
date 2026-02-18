@@ -26,7 +26,7 @@
           pkgs.zig
           pkgs.zls
           pkgs.alacritty
-          pkgs.xorg.xorgserver
+          pkgs.xorg-server
         ];
         shellHook = ''
           export PS1="(oxwm-dev) $PS1"

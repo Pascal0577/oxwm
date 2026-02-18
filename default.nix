@@ -3,7 +3,9 @@
   stdenv,
   zig,
   pkg-config,
-  xorg,
+  libx11,
+  libxft,
+  libxinerama,
   lua5_4,
   freetype,
   fontconfig,
@@ -18,9 +20,9 @@ stdenv.mkDerivation (finalAttrs: {
   nativeBuildInputs = [zig.hook pkg-config];
 
   buildInputs = [
-    xorg.libX11
-    xorg.libXinerama
-    xorg.libXft
+    libx11
+    libxinerama
+    libxft
     lua5_4
     freetype
     fontconfig
