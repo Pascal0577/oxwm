@@ -80,5 +80,7 @@
         ];
       };
     };
+
+    homeManagerModules.default = import ./hm.nix { inherit self; };
   };
 }
