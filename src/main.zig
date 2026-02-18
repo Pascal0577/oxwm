@@ -105,9 +105,13 @@ fn print_help() void {
 }
 
 fn get_config_path(allocator: std.mem.Allocator) ![]u8 {
-    const home = std.posix.getenv("HOME") orelse return error.CouldNotGetHomeDir;
-    const config_path = try std.fs.path.join(allocator, &.{ home, ".config", "oxwm", "config.lua" });
+    const config_home = std.posix.getenv("XDG_CONFIG_HOME") orelse blk: {
+        const home = std.posix.getenv("HOME") orelse return error.CouldNotGetHomeDir;
+        break :blk try std.fs.path.join(allocator, &.{ home, ".config" });
+    };
+    defer if (std.posix.getenv("XDG_CONFIG_HOME") == null) allocator.free(config_home);
 
+    const config_path = try std.fs.path.join(allocator, &.{ config_home, "oxwm", "config.lua" });
     return config_path;
 }
 
@@ -116,6 +120,20 @@ fn init_config(allocator: std.mem.Allocator) void {
     defer allocator.free(config_path);
 
     const template = @embedFile("templates/config.lua");
+
+    if (std.fs.path.dirname(config_path)) |dir_path| {
+        var root = std.fs.openDirAbsolute("/", .{}) catch |err| {
+            std.debug.print("error: could not open root directory: {}\n", .{err});
+            return;
+        };
+        defer root.close();
+
+        const relative_path = std.mem.trimLeft(u8, dir_path, "/");
+        root.makePath(relative_path) catch |err| {
+            std.debug.print("error: could not create config directory: {}\n", .{err});
+            return;
+        };
+    }
 
     const file = std.fs.createFileAbsolute(config_path, .{}) catch |err| {
         std.debug.print("error: could not create config file: {}\n", .{err});
