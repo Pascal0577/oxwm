@@ -109,6 +109,7 @@ pub const Color_Scheme = struct {
 
 pub const Config = struct {
     allocator: std.mem.Allocator,
+    string_arena: std.heap.ArenaAllocator,
 
     terminal: []const u8 = "st",
     font: []const u8 = "monospace:size=10",
@@ -149,10 +150,12 @@ pub const Config = struct {
     pub fn init(allocator: std.mem.Allocator) Config {
         return Config{
             .allocator = allocator,
+            .string_arena = std.heap.ArenaAllocator.init(allocator),
         };
     }
 
     pub fn deinit(self: *Config) void {
+        self.string_arena.deinit();
         self.keybinds.deinit(self.allocator);
         self.rules.deinit(self.allocator);
         self.blocks.deinit(self.allocator);
