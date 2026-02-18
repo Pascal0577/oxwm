@@ -5,7 +5,7 @@
   ...
 }: let
   inherit (lib) mkEnableOption mkOption mkIf types getExe;
-  cfg = config.programs.oxwm;
+  cfg = config.programs.oxwm.settings;
 
   # Converts a nix submodule into a single oxwm bar block
   blockToLua = block: let
@@ -132,18 +132,54 @@ in {
         });
         default = [];
         description = "The list of keybinds";
-        example = ''[
+        example = ''          [
+                    {
+                      mods = [ "Mod4" "Shift" ];
+                      key = "Slash";
+                      action = "oxwm.show_keybinds()";
+                    }
+                    {
+                      mods = [ "Mod4" ];
+                      key = "D";
+                      action = "oxwm.spawn({ "sh", "-c", "dmenu_run -l 10" })";
+                    }
+                  ];'';
+      };
+      chords = mkOption {
+        type = types.listOf (types.submodule {
+          options = {
+            notes = mkOption {
+              type = types.listOf (types.submodule {
+                options = {
+                  mods = mkOption {
+                    type = types.listOf types.str;
+                    default = [];
+                  };
+                  key = mkOption {type = types.str;};
+                };
+              });
+            };
+            action = mkOption {type = types.str;};
+          };
+        });
+        default = [];
+        description = "A list of key chords for OXWM to use";
+        example = '' [
           {
-            mods = [ "Mod4" "Shift" ];
-            key = "Slash";
-            action = "oxwm.show_keybinds()";
+            notes = [
+              {
+                mods = [ "Mod4" ];
+                key = "Space";
+              }
+              {
+                mods = [];
+                key = "T";
+              }
+            ];
+            action = "oxwm.spawn_terminal()";
           }
-          {
-            mods = [ "Mod4" ];
-            key = "D";
-            action = "oxwm.spawn({ "sh", "-c", "dmenu_run -l 10" })";
-          }
-        ];'';
+        ];
+        '';
       };
       border = {
         width = mkOption {
@@ -261,7 +297,7 @@ in {
             };
           });
           description = "The modules to put on the bar";
-          example = ''[
+          example = '' [
             {
               kind = "ram";
               interval = 5;
@@ -333,7 +369,7 @@ in {
           };
         });
         description = "A list of window rules for the window manager to follow";
-        example = ''[
+        example = '' [
           {
             match.class = "gimp";
             floating = true;
@@ -354,13 +390,13 @@ in {
     };
   };
 
-  config = mkIf cfg.enable {
-    home.packages = [cfg.package];
+  config = mkIf config.programs.oxwm.enable {
+    home.packages = [config.programs.oxwm.package];
 
     xsession.windowManager.command = ''
-      ${cfg.extraSessionCommands}
+      ${config.programs.oxwm.extraSessionCommands}
       export _JAVA_AWT_WM_NONREPARENTING=1
-      exec ${getExe cfg.package}
+      exec ${getExe config.programs.oxwm.package}
     '';
 
     xdg.configFile."oxwm/config.lua".text = ''
@@ -402,11 +438,20 @@ in {
           oxwm.key.bind({ ${lib.concatMapStringsSep ", " (m: ''"${m}"'') bind.mods} }, "${bind.key}", ${bind.action})
         '')
         cfg.binds}
-      ${cfg.extraConfig}
+      ${lib.concatMapStrings (chord: ''
+          oxwm.key.chord({
+            ${lib.concatMapStringsSep ",\n  " (
+              note: ''{ { ${lib.concatMapStringsSep ", " (m: ''"${m}"'') note.mods} }, "${note.key}" }''
+            )
+            chord.notes}
+          }, ${chord.action})
+        '')
+        cfg.chords}
       ${lib.concatMapStrings (rule: ''
           ${ruleToLua rule}
         '')
         cfg.rules}
+      ${cfg.extraConfig}
     '';
   };
 }
