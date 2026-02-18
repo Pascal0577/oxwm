@@ -164,21 +164,21 @@ in {
         });
         default = [];
         description = "A list of key chords for OXWM to use";
-        example = '' [
-          {
-            notes = [
-              {
-                mods = [ "Mod4" ];
-                key = "Space";
-              }
-              {
-                mods = [];
-                key = "T";
-              }
-            ];
-            action = "oxwm.spawn_terminal()";
-          }
-        ];
+        example = ''          [
+                   {
+                     notes = [
+                       {
+                         mods = [ "Mod4" ];
+                         key = "Space";
+                       }
+                       {
+                         mods = [];
+                         key = "T";
+                       }
+                     ];
+                     action = "oxwm.spawn_terminal()";
+                   }
+                 ];
         '';
       };
       border = {
@@ -297,28 +297,28 @@ in {
             };
           });
           description = "The modules to put on the bar";
-          example = '' [
-            {
-              kind = "ram";
-              interval = 5;
-              format = "Ram: {used}/{total} GB";
-              color = "9ece6a";
-            }
-            {
-              kind = "static";
-              text = "|";
-              interval = 99999999;
-              color = "6dade3";
-            }
-            {
-              kind = "shell";
-              format = "{}";
-              command = "uname -r";
-              interval = 9999999;
-              color = "f7768e";
-              underline = true;
-            }
-          ];'';
+          example = ''            [
+                       {
+                         kind = "ram";
+                         interval = 5;
+                         format = "Ram: {used}/{total} GB";
+                         color = "9ece6a";
+                       }
+                       {
+                         kind = "static";
+                         text = "|";
+                         interval = 99999999;
+                         color = "6dade3";
+                       }
+                       {
+                         kind = "shell";
+                         format = "{}";
+                         command = "uname -r";
+                         interval = 9999999;
+                         color = "f7768e";
+                         underline = true;
+                       }
+                     ];'';
         };
       };
       rules = mkOption {
@@ -369,18 +369,18 @@ in {
           };
         });
         description = "A list of window rules for the window manager to follow";
-        example = '' [
-          {
-            match.class = "gimp";
-            floating = true;
-          }
-          {
-            match.class = "firefox";
-            match.title = "Library";
-            tag = 9;
-            focus = true;
-          }
-        ];'';
+        example = ''          [
+                   {
+                     match.class = "gimp";
+                     floating = true;
+                   }
+                   {
+                     match.class = "firefox";
+                     match.title = "Library";
+                     tag = 9;
+                     focus = true;
+                   }
+                 ];'';
       };
       extraConfig = mkOption {
         type = types.lines;
