@@ -393,8 +393,8 @@ in {
 
   config = mkIf config.programs.oxwm.enable {
     xdg.configFile."oxwm/config.lua".text = ''
-      @meta
-      @module 'oxwm'
+      -- @meta
+      -- @module 'oxwm'
 
       oxwm.set_terminal("${cfg.terminal}")
       oxwm.set_modkey("${cfg.modkey}")
