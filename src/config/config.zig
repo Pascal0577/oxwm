@@ -101,9 +101,9 @@ pub const Block = struct {
     thermal_zone: ?[]const u8 = null,
 };
 
-pub const Color_Scheme = struct {
-    fg: u32 = 0xbbbbbb,
-    bg: u32 = 0x1a1b26,
+pub const ColorScheme = struct {
+    foreground: u32 = 0xbbbbbb,
+    background: u32 = 0x1a1b26,
     border: u32 = 0x444444,
 };
 
@@ -136,10 +136,10 @@ pub const Config = struct {
     layout_floating_symbol: []const u8 = "><>",
     layout_scrolling_symbol: []const u8 = "[S]",
 
-    scheme_normal: Color_Scheme = .{ .fg = 0xbbbbbb, .bg = 0x1a1b26, .border = 0x444444 },
-    scheme_selected: Color_Scheme = .{ .fg = 0x0db9d7, .bg = 0x1a1b26, .border = 0xad8ee6 },
-    scheme_occupied: Color_Scheme = .{ .fg = 0x0db9d7, .bg = 0x1a1b26, .border = 0x0db9d7 },
-    scheme_urgent: Color_Scheme = .{ .fg = 0xf7768e, .bg = 0x1a1b26, .border = 0xf7768e },
+    scheme_normal: ColorScheme = .{ .foreground = 0xbbbbbb, .background = 0x1a1b26, .border = 0x444444 },
+    scheme_selected: ColorScheme = .{ .foreground = 0x0db9d7, .background = 0x1a1b26, .border = 0xad8ee6 },
+    scheme_occupied: ColorScheme = .{ .foreground = 0x0db9d7, .background = 0x1a1b26, .border = 0x0db9d7 },
+    scheme_urgent: ColorScheme = .{ .foreground = 0xf7768e, .background = 0x1a1b26, .border = 0xf7768e },
 
     keybinds: std.ArrayListUnmanaged(Keybind) = .{},
     rules: std.ArrayListUnmanaged(Rule) = .{},

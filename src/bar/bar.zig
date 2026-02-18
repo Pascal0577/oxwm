@@ -4,6 +4,7 @@ const monitor_mod = @import("../monitor.zig");
 const client_mod = @import("../client.zig");
 const blocks_mod = @import("blocks/blocks.zig");
 const config_mod = @import("../config/config.zig");
+const ColorScheme = config_mod.ColorScheme;
 
 const Monitor = monitor_mod.Monitor;
 const Block = blocks_mod.Block;
@@ -30,12 +31,6 @@ fn get_layout_symbol(layout_index: u32) []const u8 {
     };
 }
 
-pub const ColorScheme = struct {
-    foreground: c_ulong,
-    background: c_ulong,
-    border: c_ulong,
-};
-
 pub const Bar = struct {
     window: xlib.Window,
     pixmap: xlib.Pixmap,
@@ -52,6 +47,7 @@ pub const Bar = struct {
     scheme_selected: ColorScheme,
     scheme_occupied: ColorScheme,
     scheme_urgent: ColorScheme,
+    hide_vacant_tags: bool,
 
     allocator: std.mem.Allocator,
     blocks: std.ArrayList(Block),
@@ -63,7 +59,7 @@ pub const Bar = struct {
         display: *xlib.Display,
         screen: c_int,
         monitor: *Monitor,
-        font_name: []const u8,
+        config: config_mod.Config,
     ) ?*Bar {
         const bar = allocator.create(Bar) catch return null;
 
@@ -72,7 +68,7 @@ pub const Bar = struct {
         const depth = xlib.XDefaultDepth(display, screen);
         const root = xlib.XRootWindow(display, screen);
 
-        const font_name_z = allocator.dupeZ(u8, font_name) catch return null;
+        const font_name_z = allocator.dupeZ(u8, config.font) catch return null;
         defer allocator.free(font_name_z);
 
         const font = xlib.XftFontOpenName(display, screen, font_name_z);
@@ -116,12 +112,6 @@ pub const Bar = struct {
 
         _ = xlib.XMapWindow(display, window);
 
-        const cfg = config_mod.get_config();
-        const scheme_normal = if (cfg) |c| ColorScheme{ .foreground = c.scheme_normal.fg, .background = c.scheme_normal.bg, .border = c.scheme_normal.border } else ColorScheme{ .foreground = 0xbbbbbb, .background = 0x1a1b26, .border = 0x444444 };
-        const scheme_selected = if (cfg) |c| ColorScheme{ .foreground = c.scheme_selected.fg, .background = c.scheme_selected.bg, .border = c.scheme_selected.border } else ColorScheme{ .foreground = 0x0db9d7, .background = 0x1a1b26, .border = 0xad8ee6 };
-        const scheme_occupied = if (cfg) |c| ColorScheme{ .foreground = c.scheme_occupied.fg, .background = c.scheme_occupied.bg, .border = c.scheme_occupied.border } else ColorScheme{ .foreground = 0x0db9d7, .background = 0x1a1b26, .border = 0x0db9d7 };
-        const scheme_urgent = if (cfg) |c| ColorScheme{ .foreground = c.scheme_urgent.fg, .background = c.scheme_urgent.bg, .border = c.scheme_urgent.border } else ColorScheme{ .foreground = 0xf7768e, .background = 0x1a1b26, .border = 0xf7768e };
-
         bar.* = Bar{
             .window = window,
             .pixmap = pixmap,
@@ -132,10 +122,11 @@ pub const Bar = struct {
             .monitor = monitor,
             .font = font,
             .font_height = font_height,
-            .scheme_normal = scheme_normal,
-            .scheme_selected = scheme_selected,
-            .scheme_occupied = scheme_occupied,
-            .scheme_urgent = scheme_urgent,
+            .scheme_normal = config.scheme_normal,
+            .scheme_selected = config.scheme_selected,
+            .scheme_occupied = config.scheme_occupied,
+            .scheme_urgent = config.scheme_urgent,
+            .hide_vacant_tags = config.hide_vacant_tags,
             .allocator = allocator,
             .blocks = .{},
             .needs_redraw = true,
@@ -185,6 +176,8 @@ pub const Bar = struct {
             const tag_mask: u32 = @as(u32, 1) << @intCast(index);
             const is_selected = (current_tags & tag_mask) != 0;
             const is_occupied = has_clients_on_tag(monitor, tag_mask);
+
+            if (self.hide_vacant_tags and !is_occupied and !is_selected) continue;
 
             const scheme = if (is_selected) self.scheme_selected else if (is_occupied) self.scheme_occupied else self.scheme_normal;
 
@@ -267,7 +260,15 @@ pub const Bar = struct {
         const display = xlib.c.XOpenDisplay(null) orelse return null;
         defer _ = xlib.XCloseDisplay(display);
 
+        const monitor = self.monitor;
+        const current_tags = monitor.tagset[monitor.sel_tags];
         for (tags, 0..) |tag, index| {
+            const tag_mask = @as(u32, 1) << @intCast(index);
+            const is_selected = (current_tags & tag_mask) != 0;
+            const is_occupied = has_clients_on_tag(monitor, tag_mask);
+
+            if (self.hide_vacant_tags and !is_occupied and !is_selected) continue;
+
             const tag_text_width = self.text_width(display, tag);
             const tag_width = tag_text_width + padding * 2;
 

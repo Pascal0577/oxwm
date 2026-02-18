@@ -314,7 +314,7 @@ fn setup_bars(allocator: std.mem.Allocator, display: *Display) void {
     var last_bar: ?*bar_mod.Bar = null;
 
     while (current_monitor) |monitor| {
-        const bar = bar_mod.Bar.create(allocator, display.handle, display.screen, monitor, config.font);
+        const bar = bar_mod.Bar.create(allocator, display.handle, display.screen, monitor, config);
         if (bar) |created_bar| {
             if (tiling.bar_height == 0) {
                 tiling.set_bar_height(created_bar.height);

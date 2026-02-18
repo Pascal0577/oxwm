@@ -9,7 +9,7 @@ const Block_Type = config_mod.Block_Type;
 const Mouse_Button = config_mod.Mouse_Button;
 const Click_Target = config_mod.Click_Target;
 const Mouse_Action = config_mod.Mouse_Action;
-const Color_Scheme = config_mod.Color_Scheme;
+const ColorScheme = config_mod.ColorScheme;
 
 const c = @cImport({
     @cInclude("lua.h");
@@ -1184,10 +1184,10 @@ fn parse_color(state: *c.lua_State, idx: c_int) u32 {
     return 0;
 }
 
-fn parse_scheme(state: *c.lua_State) Color_Scheme {
-    return Color_Scheme{
-        .fg = parse_color(state, 1),
-        .bg = parse_color(state, 2),
+fn parse_scheme(state: *c.lua_State) ColorScheme {
+    return ColorScheme{
+        .foreground = parse_color(state, 1),
+        .background = parse_color(state, 2),
         .border = parse_color(state, 3),
     };
 }
