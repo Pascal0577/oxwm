@@ -5,6 +5,7 @@
   ...
 }: let
   inherit (lib) mkEnableOption mkOption mkIf types concatMapStringsSep concatStringsSep concatMapStrings boolToString optional;
+  inherit (lib.strings) escapeNixString;
   cfg = config.programs.oxwm.settings;
 
   # Converts a nix submodule into a single oxwm bar block
@@ -406,7 +407,7 @@ in {
 
       oxwm.set_terminal("${cfg.terminal}")
       oxwm.set_modkey("${cfg.modkey}")
-      oxwm.set_tags({${concatMapStringsSep ", " (t: ''"${t}"'') cfg.tags}})
+      oxwm.set_tags({${concatMapStringsSep ", " escapeNixString cfg.tags}})
 
       local blocks = {
         ${concatMapStringsSep ",\n" blockToLua cfg.bar.blocks}
@@ -439,14 +440,14 @@ in {
       }
       ${
         concatMapStrings (bind: ''
-          oxwm.key.bind({ ${concatMapStringsSep ", " (m: ''"${m}"'') bind.mods} }, "${bind.key}", ${bind.action})
+          oxwm.key.bind({ ${concatMapStringsSep ", " escapeNixString bind.mods} }, "${bind.key}", ${bind.action})
         '')
         cfg.binds
       }
       ${
         concatMapStrings (chord: ''
           oxwm.key.chord({
-            ${concatMapStringsSep ",\n  " (note: ''{ { ${concatMapStringsSep ", " (m: ''"${m}"'') note.mods} }, "${note.key}" }'') chord.notes}
+            ${concatMapStringsSep ",\n  " (note: ''{ { ${concatMapStringsSep ", " escapeNixString note.mods} }, "${note.key}" }'') chord.notes}
           }, ${chord.action})
         '')
         cfg.chords
