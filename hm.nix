@@ -1,5 +1,9 @@
-{ self }: { config, lib, pkgs, ... }:
-let
+{self}: {
+  config,
+  lib,
+  pkgs,
+  ...
+}: let
   inherit (lib) mkEnableOption mkOption mkIf types getExe;
   cfg = config.programs.oxwm;
 
@@ -9,42 +13,54 @@ let
       interval = ${toString block.interval},
       color = "#${block.color}",
       underline = ${lib.boolToString block.underline},'';
-  in "oxwm.bar.block.${block.kind}({\n" +
-    (if block.kind == "static" then ''
-      text = "${block.text}",
-      ${common}
-    '' else if block.kind == "shell" then ''
-      format = "${block.format}",
-      command = "${block.command}",
-      ${common}
-    '' else if block.kind == "datetime" then ''
-      format = "${block.format}",
-      date_format = "${block.date_format}",
-      ${common}
-    '' else if block.kind == "battery" then ''
-      format = "${block.format}",
-      charging = "${block.charging}",
-      discharging = "${block.discharging}",
-      full = "${block.full}",
-      ${common}
-    '' else ''
-      format = "${block.format}",
-      ${common}
-    '') + "})";
+  in
+    "oxwm.bar.block.${block.kind}({\n"
+    + (
+      if block.kind == "static"
+      then ''
+        text = "${block.text}",
+        ${common}
+      ''
+      else if block.kind == "shell"
+      then ''
+        format = "${block.format}",
+        command = "${block.command}",
+        ${common}
+      ''
+      else if block.kind == "datetime"
+      then ''
+        format = "${block.format}",
+        date_format = "${block.date_format}",
+        ${common}
+      ''
+      else if block.kind == "battery"
+      then ''
+        format = "${block.format}",
+        charging = "${block.charging}",
+        discharging = "${block.discharging}",
+        full = "${block.full}",
+        ${common}
+      ''
+      else ''
+        format = "${block.format}",
+        ${common}
+      ''
+    )
+    + "})";
 
-    ruleToLua = rule: let
-      fields = lib.concatStringsSep ", " (
-        lib.optional (rule.match.class != null)    ''class = "${rule.match.class}"''    ++
-        lib.optional (rule.match.instance != null) ''instance = "${rule.match.instance}"'' ++
-        lib.optional (rule.match.title != null)    ''title = "${rule.match.title}"''    ++
-        lib.optional (rule.match.role != null)     ''role = "${rule.match.role}"''      ++
-        lib.optional (rule.floating != null)       ''floating = ${lib.boolToString rule.floating}'' ++
-        lib.optional (rule.tag != null)            ''tag = ${toString rule.tag}''       ++
-        lib.optional (rule.fullscreen != null)     ''fullscreen = ${lib.boolToString rule.fullscreen}''
-      );
-    in "oxwm.rule.add({ ${fields} })";
-in
-{
+  ruleToLua = rule: let
+    fields = lib.concatStringsSep ", " (
+      lib.optional (rule.match.class != null) ''class = "${rule.match.class}"''
+      ++ lib.optional (rule.match.instance != null) ''instance = "${rule.match.instance}"''
+      ++ lib.optional (rule.match.title != null) ''title = "${rule.match.title}"''
+      ++ lib.optional (rule.match.role != null) ''role = "${rule.match.role}"''
+      ++ lib.optional (rule.floating != null) ''floating = ${lib.boolToString rule.floating}''
+      ++ lib.optional (rule.tag != null) ''tag = ${toString rule.tag}''
+      ++ lib.optional (rule.fullscreen != null) ''fullscreen = ${lib.boolToString rule.fullscreen}''
+      ++ lib.optional (rule.focus != null) ''focus = ${lib.boolToString rule.fullscreen}''
+    );
+  in "oxwm.rule.add({ ${fields} })";
+in {
   options.programs.oxwm = {
     enable = mkEnableOption "oxwm window manager";
     package = mkOption {
@@ -57,96 +73,289 @@ in
       default = "";
       description = "Shell commands executed just before oxwm is started";
     };
-    terminal = mkOption { type = types.str; default = "alacritty"; };
-    modkey = mkOption { type = types.str; default = "Mod4"; };
-    tags = mkOption { type = types.listOf types.str;
-      default = [ "1" "2" "3" "4" "5" "6" "7" "8" "9" ];
-    };
-    layoutSymbol = {
-      tiling = mkOption { type = types.str; default = "[T]"; };
-      normie = mkOption { type = types.str; default = "[F]"; };
-      tabbed = mkOption { type = types.str; default = "[=]"; };
-    };
-    autostart = mkOption {
-      type = types.listOf types.str;
-      default = [];
-    };
-    binds = mkOption {
-      type = types.listOf (types.submodule {
-        options = {
-          mods = mkOption { type = types.listOf types.str; default = [ "${cfg.modkey}" ]; };
-          key  = mkOption { type = types.str; };
-          action = mkOption { type = types.str; };
+    settings = {
+      terminal = mkOption {
+        type = types.str;
+        default = "alacritty";
+        description = "Terminal used";
+      };
+      modkey = mkOption {
+        type = types.str;
+        default = "Mod4";
+        description = "Modifier key. Used for mouse dragging";
+      };
+      tags = mkOption {
+        type = types.listOf types.str;
+        default = ["1" "2" "3" "4" "5" "6" "7" "8" "9"];
+        description = "Workspace tags";
+        example = ["" "󰊯" "" "" "󰙯" "󱇤" "" "󱘶" "󰧮"];
+      };
+      layoutSymbol = {
+        tiling = mkOption {
+          type = types.str;
+          default = "[T]";
+          description = "Symbol in tiling mode";
         };
-      });
-      default = [];
-    };
-    border = {
-      width = mkOption { type = types.int; default = 2; };
-      focusedColor = mkOption { type = types.str; default = "6dade3"; };
-      unfocusedColor = mkOption { type = types.str; default = "bbbbbb"; };
-    };
-    gaps = {
-      smart = mkOption { type = types.enum [ "enabled"  "disabled" ]; default = "enabled"; };
-      inner = mkOption { type = types.listOf types.int; default = [ 5 5 ];};
-      outer = mkOption { type = types.listOf types.int; default = [ 5 5 ];};
-    };
-    bar = {
-      font = mkOption { type = types.str; default = "monospace 10"; };
-      hideVacantTags = mkOption { type = types.bool; default = false; };
-      unoccupiedScheme = mkOption {
-        type = types.listOf types.str;
-        default = [ "bbbbbb" "1a1b26" "444444" ];
+        normie = mkOption {
+          type = types.str;
+          default = "[F]";
+          description = "Symbol in normie mode";
+        };
+        tabbed = mkOption {
+          type = types.str;
+          default = "[=]";
+          description = "Symbol in tabbed mode";
+        };
       };
-      occupiedScheme = mkOption {
+      autostart = mkOption {
         type = types.listOf types.str;
-        default = [ "0db9d7" "1a1b26" "0db9d7" ];
+        default = [];
+        description = "A list of commands to run when oxwm starts";
       };
-      selectedScheme = mkOption {
-        type = types.listOf types.str;
-        default = [ "0db9d7" "1a1b26" "ad8ee6" ];
-      };
-      urgentScheme = mkOption {
-        type = types.listOf types.str;
-        default = [ "f7768e" "1a1b26" "f7768e" ];
-      };
-      blocks = mkOption { type = types.listOf (types.submodule {
-        options = {
-          kind = mkOption {
-            type = types.enum [ "ram" "static" "shell" "datetime" "battery" ];
-            default = "static";
+      binds = mkOption {
+        type = types.listOf (types.submodule {
+          options = {
+            mods = mkOption {
+              type = types.listOf types.str;
+              default = ["${cfg.modkey}"];
+              description = "The modifier keys to invoke the command";
+            };
+            key = mkOption {
+              type = types.str;
+              description = "The keystroke to invoke the command";
+            };
+            action = mkOption {
+              type = types.str;
+              description = "The command to invoke";
+            };
           };
-          interval = mkOption { type = types.int; default = 5; };
-          color = mkOption { type = types.str; default = ""; };
-          underline = mkOption { type = types.bool; default = true; };
-          text = mkOption { type = types.str; default = "|"; };
-          format = mkOption { type = types.str; default = "{}"; };
-          command = mkOption { type = types.str; default = "uname -r"; };
-          date_format = mkOption { type = types.str; default = "%a, %b %d - %-I:%M %P"; };
-          charging = mkOption { type = types.str; default = "⚡ Bat: {}%"; };
-          discharging = mkOption { type = types.str; default = "- Bat: {}%"; };
-          full = mkOption { type = types.str; default = "✓ Bat: {}%"; };
-        };
-      }); };
-    };
-    rules = mkOption { type = types.listOf (types.submodule {
-      options = {
-        match = {
-          class = mkOption { type = types.nullOr types.str; default = null; };
-          instance = mkOption { type = types.nullOr types.str; default = null; };
-          title = mkOption { type = types.nullOr types.str; default = null; };
-          role = mkOption { type = types.nullOr types.str; default = null; };
-        };
-        floating = mkOption { type = types.nullOr types.bool; default = null; };
-        tag = mkOption { type = types.nullOr types.int; default = null; };
-        fullscreen = mkOption { type = types.nullOr types.bool; default = null; };
+        });
+        default = [];
+        description = "The list of keybinds";
+        example = ''[
+          {
+            mods = [ "Mod4" "Shift" ];
+            key = "Slash";
+            action = "oxwm.show_keybinds()";
+          }
+          {
+            mods = [ "Mod4" ];
+            key = "D";
+            action = "oxwm.spawn({ "sh", "-c", "dmenu_run -l 10" })";
+          }
+        ];'';
       };
-    }); };
-    extraConfig = mkOption { type = types.lines; default = ""; };
+      border = {
+        width = mkOption {
+          type = types.int;
+          default = 2;
+          description = "Width of the window borders";
+        };
+        focusedColor = mkOption {
+          type = types.str;
+          default = "6dade3";
+          description = "Color of the focused window";
+        };
+        unfocusedColor = mkOption {
+          type = types.str;
+          default = "bbbbbb";
+          description = "Color of the unfocused window";
+        };
+      };
+      gaps = {
+        smart = mkOption {
+          type = types.enum ["enabled" "disabled"];
+          default = "enabled";
+          description = "If enabled, removes border if single window in tag";
+        };
+        inner = mkOption {
+          type = types.listOf types.int;
+          default = [5 5];
+          description = "Inner gaps [ horizontal vertical ] in pixels";
+        };
+        outer = mkOption {
+          type = types.listOf types.int;
+          default = [5 5];
+          description = "Outer gaps [ horizontal vertical ] in pixels";
+        };
+      };
+      bar = {
+        font = mkOption {
+          type = types.str;
+          default = "monospace 10";
+          description = "The font displayed on the bar";
+        };
+        hideVacantTags = mkOption {
+          type = types.bool;
+          default = false;
+          description = "Whether to hide tags with no windows from the bar";
+        };
+        unoccupiedScheme = mkOption {
+          type = types.listOf types.str;
+          default = ["bbbbbb" "1a1b26" "444444"];
+          description = "The colorscheme to use for unoccupied tags as hex colors. Do not put a `#` before each color.";
+        };
+        occupiedScheme = mkOption {
+          type = types.listOf types.str;
+          default = ["0db9d7" "1a1b26" "0db9d7"];
+          description = "The colorscheme to use for occupied tags as hex colors. Do not put a `#` before each color.";
+        };
+        selectedScheme = mkOption {
+          type = types.listOf types.str;
+          default = ["0db9d7" "1a1b26" "ad8ee6"];
+          description = "The colorscheme to use for selected tags as hex colors. Do not put a `#` before each color.";
+        };
+        urgentScheme = mkOption {
+          type = types.listOf types.str;
+          default = ["f7768e" "1a1b26" "f7768e"];
+          description = "The colorscheme to use for tags with a window requesting attention as hex colors. Do not put a `#` before each color.";
+        };
+        blocks = mkOption {
+          type = types.listOf (types.submodule {
+            options = {
+              kind = mkOption {
+                type = types.enum ["ram" "static" "shell" "datetime" "battery"];
+                default = "static";
+                description = "The kind of block to be used";
+              };
+              interval = mkOption {
+                type = types.int;
+                default = 5;
+              };
+              color = mkOption {
+                type = types.str;
+                default = "";
+              };
+              underline = mkOption {
+                type = types.bool;
+                default = true;
+              };
+              text = mkOption {
+                type = types.str;
+                default = "|";
+              };
+              format = mkOption {
+                type = types.str;
+                default = "{}";
+              };
+              command = mkOption {
+                type = types.str;
+                default = "uname -r";
+              };
+              date_format = mkOption {
+                type = types.str;
+                default = "%a, %b %d - %-I:%M %P";
+              };
+              charging = mkOption {
+                type = types.str;
+                default = "⚡ Bat: {}%";
+              };
+              discharging = mkOption {
+                type = types.str;
+                default = "- Bat: {}%";
+              };
+              full = mkOption {
+                type = types.str;
+                default = "✓ Bat: {}%";
+              };
+            };
+          });
+          description = "The modules to put on the bar";
+          example = ''[
+            {
+              kind = "ram";
+              interval = 5;
+              format = "Ram: {used}/{total} GB";
+              color = "9ece6a";
+            }
+            {
+              kind = "static";
+              text = "|";
+              interval = 99999999;
+              color = "6dade3";
+            }
+            {
+              kind = "shell";
+              format = "{}";
+              command = "uname -r";
+              interval = 9999999;
+              color = "f7768e";
+              underline = true;
+            }
+          ];'';
+        };
+      };
+      rules = mkOption {
+        type = types.listOf (types.submodule {
+          options = {
+            match = {
+              class = mkOption {
+                type = types.nullOr types.str;
+                default = null;
+                description = "The class to match windows with";
+              };
+              instance = mkOption {
+                type = types.nullOr types.str;
+                default = null;
+                description = "The instance to match windows with";
+              };
+              title = mkOption {
+                type = types.nullOr types.str;
+                default = null;
+                description = "The title to match windows with";
+              };
+              role = mkOption {
+                type = types.nullOr types.str;
+                default = null;
+                description = "The role to match windows with";
+              };
+            };
+            floating = mkOption {
+              type = types.nullOr types.bool;
+              default = null;
+              description = "Whether to apply floating to the matched window";
+            };
+            tag = mkOption {
+              type = types.nullOr types.int;
+              default = null;
+              description = "What tag the matched window should be opened on";
+            };
+            fullscreen = mkOption {
+              type = types.nullOr types.bool;
+              default = null;
+              description = "Whether to apply fullscreen to the matched window";
+            };
+            focus = mkOption {
+              type = types.nullOr types.bool;
+              default = null;
+              description = "Whether to apply focus to the matched window";
+            };
+          };
+        });
+        description = "A list of window rules for the window manager to follow";
+        example = ''[
+          {
+            match.class = "gimp";
+            floating = true;
+          }
+          {
+            match.class = "firefox";
+            match.title = "Library";
+            tag = 9;
+            focus = true;
+          }
+        ];'';
+      };
+      extraConfig = mkOption {
+        type = types.lines;
+        default = "";
+        description = "Extra lua confguration that gets inserted at the bottom of the file";
+      };
+    };
   };
 
   config = mkIf cfg.enable {
-    home.packages = [ cfg.package ];
+    home.packages = [cfg.package];
 
     xsession.windowManager.command = ''
       ${cfg.extraSessionCommands}
@@ -187,14 +396,17 @@ in
 
       ${lib.concatMapStrings (cmd: ''
           oxwm.autostart("${cmd}")
-      '') cfg.autostart}
+        '')
+        cfg.autostart}
       ${lib.concatMapStrings (bind: ''
-        oxwm.key.bind({ ${lib.concatMapStringsSep ", " (m: ''"${m}"'') bind.mods} }, "${bind.key}", ${bind.action})
-      '') cfg.binds}
+          oxwm.key.bind({ ${lib.concatMapStringsSep ", " (m: ''"${m}"'') bind.mods} }, "${bind.key}", ${bind.action})
+        '')
+        cfg.binds}
       ${cfg.extraConfig}
       ${lib.concatMapStrings (rule: ''
-        ${ruleToLua rule}
-      '') cfg.rules}
+          ${ruleToLua rule}
+        '')
+        cfg.rules}
     '';
   };
 }
