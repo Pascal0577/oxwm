@@ -12,7 +12,8 @@
     common = ''
       interval = ${toString block.interval},
       color = "#${block.color}",
-      underline = ${boolToString block.underline},'';
+      underline = ${boolToString block.underline},
+    '';
   in
     "oxwm.bar.block.${block.kind}({\n"
     + (
@@ -133,18 +134,20 @@ in {
         });
         default = [];
         description = "The list of keybinds";
-        example = ''          [
-                    {
-                      mods = [ "Mod4" "Shift" ];
-                      key = "Slash";
-                      action = "oxwm.show_keybinds()";
-                    }
-                    {
-                      mods = [ "Mod4" ];
-                      key = "D";
-                      action = "oxwm.spawn({ "sh", "-c", "dmenu_run -l 10" })";
-                    }
-                  ];'';
+        example = ''
+          [
+            {
+              mods = [ "Mod4" "Shift" ];
+              key = "Slash";
+              action = "oxwm.show_keybinds()";
+            }
+            {
+              mods = [ "Mod4" ];
+              key = "D";
+              action = "oxwm.spawn({ "sh", "-c", "dmenu_run -l 10" })";
+            }
+          ];
+        '';
       };
       chords = mkOption {
         type = types.listOf (types.submodule {
@@ -165,21 +168,22 @@ in {
         });
         default = [];
         description = "A list of key chords for OXWM to use";
-        example = ''          [
-                   {
-                     notes = [
-                       {
-                         mods = [ "Mod4" ];
-                         key = "Space";
-                       }
-                       {
-                         mods = [];
-                         key = "T";
-                       }
-                     ];
-                     action = "oxwm.spawn_terminal()";
-                   }
-                 ];
+        example = ''
+          [
+            {
+              notes = [
+                {
+                  mods = [ "Mod4" ];
+                  key = "Space";
+                }
+                {
+                  mods = [];
+                  key = "T";
+                }
+              ];
+              action = "oxwm.spawn_terminal()";
+            }
+          ];
         '';
       };
       border = {
@@ -298,28 +302,30 @@ in {
             };
           });
           description = "The modules to put on the bar";
-          example = ''            [
-                       {
-                         kind = "ram";
-                         interval = 5;
-                         format = "Ram: {used}/{total} GB";
-                         color = "9ece6a";
-                       }
-                       {
-                         kind = "static";
-                         text = "|";
-                         interval = 99999999;
-                         color = "6dade3";
-                       }
-                       {
-                         kind = "shell";
-                         format = "{}";
-                         command = "uname -r";
-                         interval = 9999999;
-                         color = "f7768e";
-                         underline = true;
-                       }
-                     ];'';
+          example = ''
+            [
+              {
+                kind = "ram";
+                interval = 5;
+                format = "Ram: {used}/{total} GB";
+                color = "9ece6a";
+              }
+              {
+                kind = "static";
+                text = "|";
+                interval = 99999999;
+                color = "6dade3";
+              }
+              {
+                kind = "shell";
+                format = "{}";
+                command = "uname -r";
+                interval = 9999999;
+                color = "f7768e";
+                underline = true;
+              }
+            ];
+          '';
         };
       };
       rules = mkOption {
@@ -370,18 +376,20 @@ in {
           };
         });
         description = "A list of window rules for the window manager to follow";
-        example = ''          [
-                   {
-                     match.class = "gimp";
-                     floating = true;
-                   }
-                   {
-                     match.class = "firefox";
-                     match.title = "Library";
-                     tag = 9;
-                     focus = true;
-                   }
-                 ];'';
+        example = ''
+          [
+            {
+              match.class = "gimp";
+              floating = true;
+            }
+            {
+              match.class = "firefox";
+              match.title = "Library";
+              tag = 9;
+              focus = true;
+            }
+          ];
+        '';
       };
       extraConfig = mkOption {
         type = types.lines;
@@ -423,27 +431,33 @@ in {
       oxwm.set_layout_symbol("normie", "${cfg.layoutSymbol.normie}")
       oxwm.set_layout_symbol("tabbed", "${cfg.layoutSymbol.tabbed}")
 
-      ${concatMapStrings (cmd: ''
+      ${
+        concatMapStrings (cmd: ''
           oxwm.autostart("${cmd}")
         '')
-        cfg.autostart}
-      ${concatMapStrings (bind: ''
+        cfg.autostart
+      }
+      ${
+        concatMapStrings (bind: ''
           oxwm.key.bind({ ${concatMapStringsSep ", " (m: ''"${m}"'') bind.mods} }, "${bind.key}", ${bind.action})
         '')
-        cfg.binds}
-      ${concatMapStrings (chord: ''
+        cfg.binds
+      }
+      ${
+        concatMapStrings (chord: ''
           oxwm.key.chord({
-            ${concatMapStringsSep ",\n  " (
-              note: ''{ { ${concatMapStringsSep ", " (m: ''"${m}"'') note.mods} }, "${note.key}" }''
-            )
-            chord.notes}
+            ${concatMapStringsSep ",\n  " (note: ''{ { ${concatMapStringsSep ", " (m: ''"${m}"'') note.mods} }, "${note.key}" }'') chord.notes}
           }, ${chord.action})
         '')
-        cfg.chords}
-      ${concatMapStrings (rule: ''
+        cfg.chords
+      }
+      ${
+        concatMapStrings (rule: ''
           ${ruleToLua rule}
         '')
-        cfg.rules}
+        cfg.rules
+      }
+
       ${cfg.extraConfig}
     '';
   };
